@@ -1,0 +1,22 @@
+([]*compiler.Query) (len=1) {
+  (*compiler.Query)({
+    scalarIdx: (int) 0,
+    name: (*compiler.token)({
+      Value: (string) (len=12) "simpleSelect",
+      Start: (int) 15,
+      Stop: (int) 26,
+      Line: (int) 3,
+      Column: (int) 9
+    }),
+    execMode: (*compiler.token)(<nil>),
+    params: (map[string]*compiler.Param) {
+    },
+    notNullParams: ([]string) <nil>,
+    returnValueName: (*compiler.token)(<nil>),
+    percents: ([]*compiler.token) <nil>,
+    AsStruct: (bool) false,
+    Comments: ([]string) <nil>,
+    Statement: (string) (len=19) "SELECT * FROM users"
+  })
+}
+(interface {}) <nil>

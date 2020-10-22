@@ -1,0 +1,31 @@
+([]*compiler.Query) (len=1) {
+  (*compiler.Query)({
+    scalarIdx: (int) 0,
+    name: (*compiler.token)(<nil>),
+    execMode: (*compiler.token)(<nil>),
+    params: (map[string]*compiler.Param) {
+    },
+    notNullParams: ([]string) <nil>,
+    returnValueName: (*compiler.token)(<nil>),
+    percents: ([]*compiler.token) (len=2) {
+      (*compiler.token)({
+        Value: (string) "",
+        Start: (int) 48,
+        Stop: (int) 48,
+        Line: (int) 3,
+        Column: (int) 38
+      }),
+      (*compiler.token)({
+        Value: (string) "",
+        Start: (int) 52,
+        Stop: (int) 52,
+        Line: (int) 3,
+        Column: (int) 38
+      })
+    },
+    AsStruct: (bool) false,
+    Comments: ([]string) <nil>,
+    Statement: (string) (len=43) "SELECT * FROM users WHERE name LIKE '%bob%'"
+  })
+}
+(interface {}) <nil>
