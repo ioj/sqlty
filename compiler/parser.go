@@ -23,6 +23,7 @@ type parserListener struct {
 func (s *parserListener) EnterQuery(ctx *parser.QueryContext) {
 	s.currentQuery = &Query{
 		Filename: s.filename,
+		paramIdx: make(map[ParamType]int),
 		params:   make(map[string]*Param),
 	}
 }
@@ -62,8 +63,8 @@ func (s *parserListener) ExitSpreadTransform(ctx *parser.SpreadTransformContext)
 	}
 
 	s.currentParam.Type = Spread
-	s.currentParam.Idx = s.currentQuery.spreadIdx
-	s.currentQuery.spreadIdx++
+	s.currentParam.Idx = s.currentQuery.paramIdx[Spread]
+	s.currentQuery.paramIdx[Spread]++
 }
 
 // ExitStructTransform is called when the parser has finished parsing the struct field
@@ -97,6 +98,8 @@ func (s *parserListener) ExitStructSpreadTransform(ctx *parser.StructSpreadTrans
 	}
 
 	s.currentParam.Type = StructSpread
+	s.currentParam.Idx = s.currentQuery.paramIdx[StructSpread]
+	s.currentQuery.paramIdx[StructSpread]++
 }
 
 // ExitQuery is called when production query is exited.
@@ -218,11 +221,11 @@ func (s *parserListener) EnterParamId(ctx *parser.ParamIdContext) {
 	} else {
 		s.currentQuery.params[lname] = &Param{
 			definition: &token{Value: name},
-			Idx:        s.currentQuery.scalarIdx,
+			Idx:        s.currentQuery.paramIdx[Scalar],
 			Type:       Scalar,
 			uses:       []*token{t},
 		}
-		s.currentQuery.scalarIdx++
+		s.currentQuery.paramIdx[Scalar]++
 	}
 }
 

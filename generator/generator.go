@@ -1,54 +1,103 @@
-package main
+package generator
 
 import (
+	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path"
 	"text/template"
+
+	"github.com/ioj/sqlty/stmt"
 )
 
-func main() {
-	tmplfn := template.FuncMap{
-		"firstParamTypeName": func(params []Param) string {
-			if len(params) == 0 {
-				return ""
-			}
+type Generator struct {
+	tmpl *template.Template
+}
 
-			return params[0].Type.Name
-		},
+var tmplfn = template.FuncMap{
+	"firstParamTypeName": func(params []stmt.Param) string {
+		if len(params) == 0 {
+			return ""
+		}
 
-		"firstParamNilReturnValue": func(params []Param) string {
-			if len(params) == 0 {
-				return ""
-			}
+		return params[0].Type.Name
+	},
 
-			if params[0].Type.Nullable {
-				return "nil"
-			}
+	"firstParamNilReturnValue": func(params []stmt.Param) string {
+		if len(params) == 0 {
+			return ""
+		}
 
-			return params[0].Type.ZeroValue
-		},
+		if params[0].Type.Nullable {
+			return "nil"
+		}
 
-		"firstParamZeroReturnValue": func(params []Param) string {
-			if len(params) == 0 {
-				return ""
-			}
+		return params[0].Type.ZeroValue
+	},
 
-			return params[0].Type.ZeroValue
-		},
+	"firstParamZeroReturnValue": func(params []stmt.Param) string {
+		if len(params) == 0 {
+			return ""
+		}
 
-		"needsPrintf": func(def *StatementDef) bool {
-			return len(def.Params.Spread) > 0 || def.Params.StructPick.Name != ""
-		},
+		return params[0].Type.ZeroValue
+	},
 
-		"hasParams": func(def *StatementDef) bool {
-			return !def.Params.None()
-		},
+	"needsPrintf": func(def *stmt.Query) bool {
+		return len(def.Params.Spread)+len(def.Params.StructSpread) > 0
+	},
+
+	"hasParams": func(def *stmt.Query) bool {
+		return !def.Params.None()
+	},
+}
+
+func New(templatepath string) (*Generator, error) {
+	var err error
+	g := &Generator{}
+
+	g.tmpl, err = template.New("").Funcs(tmplfn).ParseGlob(templatepath)
+	if err != nil {
+		return nil, err
 	}
 
+	// Check if the required template exists
+	t := g.tmpl.Lookup("query.go.tpl")
+	if t == nil {
+		return nil, errors.New("template not found: query.go.tpl")
+	}
+
+	return g, nil
+}
+
+func (g *Generator) Queries(fname string, q *stmt.Queries) error {
+	f, err := os.Create(fname)
+	if err != nil {
+		return err
+	}
+
+	if len(q.Queries) == 0 {
+		return errors.New("no queries to render")
+	}
+
+	if err := g.tmpl.Lookup("query.go.tpl").Execute(f, q); err != nil {
+		return err
+	}
+
+	f.Close()
+
+	goimports := exec.Command("goimports", "-w", f.Name())
+	goimports.Dir = path.Dir(f.Name())
+	if output, err := goimports.CombinedOutput(); err != nil {
+		return fmt.Errorf("goimports error: %v, %v", err, string(output))
+	}
+
+	return nil
+}
+
+/*
+func main() {
 	tmpl, err := template.New("").Funcs(tmplfn).ParseGlob("../templates/*.go.tpl")
 	if err != nil {
 		log.Fatal(err)
@@ -59,7 +108,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	/*
 			params := &StatementDef{
 				PackageName: "sql",
 				Name:        "WhateverBleh",
@@ -94,27 +142,27 @@ func main() {
 					{"ID", Type{"pgtype.UUID", "&pgtype.UUID{}", true}},
 					{"Name", Type{"string", "\"\"", false}},
 				},
-			}*/
-	params := &StatementDef{
+			}
+	params := &stmt.Query{
 		PackageName: "sql",
 		Name:        "AddStocks",
 		ExecMode:    "exec",
 		Statement:   "insert into stocks (symbol, name, market, currency, enabled) values %[1]v",
-		Params: Params{
+		Params: stmt.Params{
 			AsStruct: false,
 			/*
 				Basic: []Param{
 					{"ID", Type{"pgtype.UUID", "pgtype.UUID{}", false}},
 					{"Limit", Type{"int", "0", false}},
-				},*/
-			StructPick: StructPick{
+				},
+			StructSpread: stmt.StructSpread{
 				Name: "Stock",
-				Params: []Param{
-					{"Symbol", Type{"string", "\"\"", false}},
-					{"Name", Type{"string", "\"\"", false}},
-					{"Market", Type{"string", "\"\"", false}},
-					{"Currency", Type{"string", "\"\"", false}},
-					{"Enabled", Type{"bool", "false", false}},
+				Params: []stmt.Param{
+					{"Symbol", stmt.Type{"string", "\"\"", false}},
+					{"Name", stmt.Type{"string", "\"\"", false}},
+					{"Market", stmt.Type{"string", "\"\"", false}},
+					{"Currency", stmt.Type{"string", "\"\"", false}},
+					{"Enabled", stmt.Type{"bool", "false", false}},
 				},
 			},
 		},
@@ -123,7 +171,7 @@ func main() {
 				{"ID", Type{"pgtype.UUID", "pgtype.UUID{}", false}},
 				{"Name", Type{"string", "\"\"", false}},
 				{"Active", Type{"bool", "\"\"", false}},
-			},*/
+			},*_/
 	}
 
 	if err := params.Validate(); err != nil {
@@ -145,13 +193,12 @@ func main() {
 		fmt.Printf("-- goimports error end --\n\n")
 	}
 
-	/*
 		if output, err := exec.Command("gofmt", "-w", f.Name()).CombinedOutput(); err != nil {
 			fmt.Println("-- gofmt error --")
 			fmt.Println(string(output))
 			fmt.Println(err)
 			fmt.Printf("-- gofmt error end --\n\n")
-		}*/
+		}
 
 	f, err = os.Open(f.Name())
 	if err != nil {
@@ -167,8 +214,8 @@ func main() {
 	fmt.Println(string(data))
 	fmt.Printf("\n\n(%v)\n", f.Name())
 
-	/*
 		if err := os.Remove(f.Name()); err != nil {
 			log.Fatal(err)
-		}*/
+		}
 }
+*/

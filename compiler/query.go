@@ -2,10 +2,14 @@ package compiler
 
 import (
 	"fmt"
+	"path"
+	"regexp"
 	"sort"
 	"strings"
 
 	"github.com/antlr/antlr4/runtime/Go/antlr"
+	"github.com/ioj/sqlty/stmt"
+	"github.com/serenize/snaker"
 )
 
 // token is a string with a location.
@@ -49,8 +53,7 @@ type Param struct {
 }
 
 type Query struct {
-	scalarIdx int
-	spreadIdx int
+	paramIdx map[ParamType]int
 
 	name            *token
 	execMode        *token
@@ -117,6 +120,19 @@ func (p *Param) DebugString() string {
 	return strings.Join(lines, "\n")
 }
 
+func (q *Param) Keys() []*StructKey {
+	keys := make([]*StructKey, len(q.keys))
+	for _, k := range q.keys {
+		keys[k.idx] = k
+	}
+
+	return keys
+}
+
+func (q *Query) Name() string {
+	return q.name.Value
+}
+
 func (q *Query) DebugString() string {
 	lines := []string{
 		fmt.Sprintf("Filename         : %v", q.Filename),
@@ -149,6 +165,47 @@ func (q *Query) NeedsSprintf() bool {
 	return false
 }
 
+// Params returns the query parameters of a given type, sorted
+// by their index.
+func (q *Query) Params(ptype ParamType) []*Param {
+	var params []*Param
+
+	for _, p := range q.params {
+		if p.Type == ptype {
+			params = append(params, p)
+		}
+	}
+
+	sort.Slice(params, func(i, j int) bool {
+		return params[i].Idx < params[j].Idx
+	})
+
+	return params
+}
+
+// NotNullArray returns a list of not-null properties for sorted
+// params. Params are sorted so that scalars go first, then spreads,
+// then a struct spreads.
+func (q *Query) NotNullArray() []bool {
+	var retval []bool
+
+	for _, scalar := range q.Params(Scalar) {
+		retval = append(retval, scalar.NotNull)
+	}
+
+	for _, spread := range q.Params(Spread) {
+		retval = append(retval, spread.NotNull)
+	}
+
+	for _, ss := range q.Params(StructSpread) {
+		for _, k := range ss.Keys() {
+			retval = append(retval, k.NotNull)
+		}
+	}
+
+	return retval
+}
+
 func (q *Query) Statement() string {
 	if len(q.params) == 0 {
 		return q.statement.Value
@@ -162,23 +219,18 @@ func (q *Query) Statement() string {
 		}
 	}
 
-	var structSpreadIdx int
-	for _, p := range q.params {
-		if p.Type == "Spread" {
-			structSpreadIdx++
-		}
-	}
+	structSpreadIdx := len(q.Params(Spread)) + 1
 
 	for _, p := range q.params {
 		var repstr string
 
 		switch p.Type {
-		case "Scalar":
+		case Scalar:
 			repstr = fmt.Sprintf("$%d", p.Idx+1)
-		case "Spread":
-			repstr = fmt.Sprintf("%%[%d]v", p.Idx)
-		case "StructSpread":
-			repstr = fmt.Sprintf("%%[%d]v", structSpreadIdx)
+		case Spread:
+			repstr = fmt.Sprintf("%%[%d]v", p.Idx+1)
+		case StructSpread:
+			repstr = fmt.Sprintf("%%[%d]v", p.Idx+structSpreadIdx)
 		}
 
 		for _, u := range p.uses {
@@ -220,4 +272,157 @@ func (q *Query) Statement() string {
 	}
 
 	return stmt.String()
+}
+
+func (q *Query) PreparedQuery() string {
+	if !q.NeedsSprintf() {
+		return q.Statement()
+	}
+
+	stmt := q.Statement()
+	params := []interface{}{}
+	idx := len(q.Params(Scalar)) + 1
+
+	for range q.Params(Spread) {
+		params = append(params, fmt.Sprintf("$%[1]d,$%[1]d", idx))
+		idx++
+	}
+
+	for _, ss := range q.Params(StructSpread) {
+		keyslen := len(ss.keys)
+		keys := make([]string, keyslen)
+		for i := 0; i < keyslen; i++ {
+			keys[i] = fmt.Sprintf("$%d", idx)
+			idx++
+		}
+
+		params = append(params, fmt.Sprintf("(%[1]v),(%[1]v)", strings.Join(keys, ",")))
+	}
+
+	return fmt.Sprintf(stmt, params...)
+}
+
+// StmtQuery returns a stmt.Query based on internal values and type resolutions for arguments
+// and return values provided in parameters.
+func (q *Query) StmtQuery(ptypes []stmt.Type, returns []stmt.Param) (*stmt.Query, error) {
+	stmtq := &stmt.Query{
+		Statement: q.Statement(),
+		Comments:  q.Comments,
+	}
+
+	// Set the name. If it's empty, then use the name derived from the filename.
+	// If there are multiple queries in the filename, they'll be fixed later on during
+	// per-filename checks.
+	name := q.name.Value
+	if name == "" {
+		// Get filename without extension
+		name = strings.TrimSuffix(path.Base(q.Filename), path.Ext(q.Filename))
+		name = regexp.MustCompile(`[^a-zA-Z0-9_.]`).ReplaceAllString(name, "_")
+	}
+
+	stmtq.Name = snaker.SnakeToCamel(name)
+
+	// Set the exec mode
+	switch q.execMode.Value {
+	case "@one":
+		stmtq.ExecMode = stmt.ExecModeOne
+	case "@many":
+		stmtq.ExecMode = stmt.ExecModeMany
+	case "@exec":
+		stmtq.ExecMode = stmt.ExecModeExec
+	default:
+		return nil, fmt.Errorf("unknown exec mode: %v", q.execMode.Value)
+	}
+
+	// Handle params. Param types passed as ptypes are expected to be sorted the same way
+	// as the q.PreparedStatement does, i.e. scalars, spreads, struct spreads.
+	// This way, we can apply the types to the parameters in the correct order.
+	//
+	// Also, make sure that there are no duplicate param names. This was checked by the
+	// compiler before, but new duplicates may appear after snake->camel normalization.
+	private := true
+
+	if q.paramStructName != nil {
+		stmtq.Params.Name = snaker.SnakeToCamel(q.paramStructName.Value)
+
+		// If there's a param struct name, all parameters are going to be placed in a struct,
+		// so their names should be public. If the param struct name is empty, all parameters
+		// are generated as function parameters.
+		private = false
+	}
+
+	ptypeidx := 0
+	pnames := newStructNameNorm(private)
+	for _, p := range q.Params(Scalar) {
+		normalized, err := pnames.Add(p.definition.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		stmtq.Params.Scalar = append(stmtq.Params.Scalar, stmt.Param{
+			Name: normalized,
+			Type: ptypes[ptypeidx],
+		})
+		ptypeidx++
+	}
+
+	for _, p := range q.Params(Spread) {
+		normalized, err := pnames.Add(p.definition.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		stmtq.Params.Spread = append(stmtq.Params.Spread, stmt.Param{
+			Name: normalized,
+			Type: ptypes[ptypeidx],
+		})
+		ptypeidx++
+	}
+
+	for _, p := range q.Params(StructSpread) {
+		normalized, err := pnames.Add(p.definition.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		s := stmt.Struct{Name: normalized}
+		structkeynames := newStructNameNorm(false)
+		for _, sp := range p.Keys() {
+			normalizedkey, err := structkeynames.Add(sp.Name())
+			if err != nil {
+				return nil, err
+			}
+			s.Params = append(s.Params, stmt.Param{
+				Name: normalizedkey,
+				Type: ptypes[ptypeidx],
+			})
+			ptypeidx++
+		}
+
+		stmtq.Params.StructSpread = append(stmtq.Params.StructSpread, s)
+	}
+
+	// Handle return value: normalize return value struct name, struct fields,
+	// make sure that there are no duplicate struct field names.
+	stmtq.Returns = stmt.Struct{
+		Name:   snaker.SnakeToCamel(q.returnValueName.Value),
+		Params: returns,
+	}
+
+	if stmtq.Returns.Name == "" {
+		stmtq.Returns.Name = stmtq.Name + "Row"
+	}
+
+	retparams := newStructNameNorm(false)
+	for n, param := range stmtq.Returns.Params {
+		normalized, err := retparams.Add(param.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		param.Name = normalized
+		stmtq.Returns.Params[n] = param
+	}
+
+	return stmtq, nil
 }
