@@ -3,9 +3,11 @@ package db
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/ioj/sqlty/stmt"
 	"github.com/jackc/pgx/v4"
+	"github.com/serenize/snaker"
 )
 
 type pgType struct {
@@ -41,6 +43,10 @@ type pgType struct {
 	// If this is a domain, then typbasetype identifies the type that
 	// this one is based on. Zero if this type is not a domain.
 	BaseType uint32
+
+	// If UniqueName is true, there are no other types with the same name,
+	// but different namespace.
+	UniqueName bool
 }
 
 type pgTypes struct {
@@ -68,18 +74,32 @@ func newPgTypes(ctx context.Context, db *pgx.Conn) (*pgTypes, error) {
 	}
 	defer rows.Close()
 
+	uniqueNames := make(map[string][]uint32)
+
 	for rows.Next() {
-		t := &pgType{}
+		t := &pgType{UniqueName: true}
 		if err := rows.Scan(&t.OID, &t.Namespace, &t.Name, &t.Type,
 			&t.Category, &t.Elem, &t.NotNull, &t.BaseType); err != nil {
 			return nil, err
 		}
+
+		n := snaker.SnakeToCamel(t.Name)
+		uniqueNames[n] = append(uniqueNames[n], t.OID)
 
 		pt.types[t.OID] = t
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+
+	// Fix UniqueName in the map
+	for _, oids := range uniqueNames {
+		if len(oids) > 1 {
+			for _, oid := range oids {
+				pt.types[oid].UniqueName = false
+			}
+		}
 	}
 
 	// Load all enum labels from the database
@@ -116,28 +136,45 @@ func (t *pgType) Fullname() string {
 	return t.Namespace + "." + t.Name
 }
 
+func (t *pgType) GolangName() string {
+	if t.UniqueName || t.Namespace == "public" {
+		return snaker.SnakeToCamel(t.Name)
+	}
+
+	return snaker.SnakeToCamel(t.Namespace + "_" + t.Name)
+}
+
+func (pt *pgTypes) Enums() []*stmt.Enum {
+	var enums []*stmt.Enum
+
+	for _, t := range pt.types {
+		if t.Type != 'e' {
+			continue
+		}
+
+		e := &stmt.Enum{Name: t.GolangName(), Values: pt.enums[t.OID]}
+		enums = append(enums, e)
+	}
+
+	sort.Slice(enums, func(i, j int) bool {
+		return enums[i].Name < enums[j].Name
+	})
+
+	return enums
+}
+
 func (pt *pgTypes) Type(oid uint32, notnull bool) (*stmt.Type, error) {
 	pgtype, ok := pt.types[oid]
 	if !ok {
 		return nil, fmt.Errorf("no type mapping for OID = %v", oid)
 	}
 
-	// Handle array types
-	if pgtype.Category == 'A' {
-		if pgtype.Elem == 0 {
-			return nil, fmt.Errorf("array type with typelem = 0, it shouldn't happen")
+	if pgtype.Type == 'e' {
+		goname := pgtype.GolangName()
+		if notnull {
+			return &stmt.Type{Name: goname, ZeroValue: fmt.Sprintf("%v(\"\")", goname), Nullable: false}, nil
 		}
-
-		pgtype, err := pt.Type(pgtype.Elem, notnull)
-		if err != nil {
-			return nil, err
-		}
-
-		pgtype.ZeroValue = fmt.Sprintf("make([]%v)", pgtype.Name)
-		pgtype.Name = "[]" + pgtype.Name
-		pgtype.Nullable = true
-
-		return pgtype, nil
+		return &stmt.Type{Name: "*" + pgtype.GolangName(), ZeroValue: "new(" + pgtype.GolangName() + ")", Nullable: true}, nil
 	}
 
 	type T struct {
@@ -145,7 +182,7 @@ func (pt *pgTypes) Type(oid uint32, notnull bool) (*stmt.Type, error) {
 		notnull  bool
 	}
 
-	t := T{pgtype.Fullname(), notnull}
+	t := T{fullname: pgtype.Fullname(), notnull: notnull || pgtype.NotNull}
 
 	switch t {
 	case T{"pg_catalog.int2", true}:
@@ -154,13 +191,37 @@ func (pt *pgTypes) Type(oid uint32, notnull bool) (*stmt.Type, error) {
 		return &stmt.Type{Name: "*int", ZeroValue: "new(int)", Nullable: true}, nil
 	case T{"pg_catalog.int8", true}:
 		return &stmt.Type{Name: "int", ZeroValue: "0", Nullable: false}, nil
+	case T{"pg_catalog._int8", true}:
+		return &stmt.Type{Name: "pgtype.Int8Array", ZeroValue: "pgtype.Int8Array{}", Nullable: false}, nil
+	case T{"pg_catalog._int8", false}:
+		return &stmt.Type{Name: "pgtype.Int8Array", ZeroValue: "pgtype.Int8Array{}", Nullable: false}, nil
 	case T{"pg_catalog.int8", false}:
 		return &stmt.Type{Name: "*int", ZeroValue: "new(int)", Nullable: true}, nil
 	case T{"pg_catalog.text", true}:
 		return &stmt.Type{Name: "string", ZeroValue: "\"\"", Nullable: false}, nil
 	case T{"pg_catalog.text", false}:
 		return &stmt.Type{Name: "*string", ZeroValue: "new(string)", Nullable: true}, nil
+	case T{"pg_catalog.date", true}:
+		return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
+	case T{"pg_catalog.date", false}:
+		return &stmt.Type{Name: "pgtype.Date", ZeroValue: "pgtype.Date{}", Nullable: false}, nil
+	case T{"pg_catalog.time", true}:
+		return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
+	case T{"pg_catalog.time", false}:
+		return &stmt.Type{Name: "pgtype.Time", ZeroValue: "pgtype.Time{}", Nullable: false}, nil
+	case T{"pg_catalog.timetz", true}:
+		return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
+	case T{"pg_catalog.timetz", false}:
+		return &stmt.Type{Name: "pgtype.Time", ZeroValue: "pgtype.Time{}", Nullable: false}, nil
+	case T{"pg_catalog.timestamp", true}:
+		return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
+	case T{"pg_catalog.timestamp", false}:
+		return &stmt.Type{Name: "pgtype.Timestamp", ZeroValue: "pgtype.Timestamp{}", Nullable: false}, nil
+	case T{"pg_catalog.timestamptz", true}:
+		return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
+	case T{"pg_catalog.timestamptz", false}:
+		return &stmt.Type{Name: "pgtype.Timestamptz", ZeroValue: "pgtype.Timestamptz{}", Nullable: false}, nil
 	}
 
-	return nil, fmt.Errorf("unknown type oid = %v, notnull = %v", oid, notnull)
+	return nil, fmt.Errorf("unknown type oid = %v, name = %v, notnull = %v", oid, t.fullname, t.notnull)
 }

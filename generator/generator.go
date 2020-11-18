@@ -6,10 +6,16 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"text/template"
 
 	"github.com/ioj/sqlty/stmt"
+	"github.com/serenize/snaker"
 )
+
+// Matches all characters that can't be used in golang's identifiers
+// https://golang.org/ref/spec#Identifiers
+var identFix = regexp.MustCompile(`[^\pL\pN_]`)
 
 type Generator struct {
 	tmpl *template.Template
@@ -51,6 +57,12 @@ var tmplfn = template.FuncMap{
 	"hasParams": func(def *stmt.Query) bool {
 		return !def.Params.None()
 	},
+
+	"valueToIdent": func(val string) string {
+		normalized := identFix.ReplaceAllString(val, "_")
+		normalized = snaker.SnakeToCamel(normalized)
+		return normalized
+	},
 }
 
 func New(templatepath string) (*Generator, error) {
@@ -72,13 +84,13 @@ func New(templatepath string) (*Generator, error) {
 }
 
 func (g *Generator) Queries(fname string, q *stmt.Queries) error {
+	if q == nil || len(q.Queries) == 0 {
+		return errors.New("at least one query is required")
+	}
+
 	f, err := os.Create(fname)
 	if err != nil {
 		return err
-	}
-
-	if len(q.Queries) == 0 {
-		return errors.New("no queries to render")
 	}
 
 	if err := g.tmpl.Lookup("query.go.tpl").Execute(f, q); err != nil {
@@ -87,6 +99,33 @@ func (g *Generator) Queries(fname string, q *stmt.Queries) error {
 
 	f.Close()
 
+	goimports := exec.Command("goimports", "-w", f.Name())
+	goimports.Dir = path.Dir(f.Name())
+	if output, err := goimports.CombinedOutput(); err != nil {
+		return fmt.Errorf("goimports error: %v, %v", err, string(output))
+	}
+
+	return nil
+}
+
+func (g *Generator) Enums(pkgpath string, enums *stmt.Enums) error {
+	fname := path.Join(pkgpath, "enums.sqlty.gen.go")
+	if enums == nil || len(enums.Enums) == 0 {
+		// Remove the file if there are no custom enums
+		os.Remove(fname)
+		return nil
+	}
+
+	f, err := os.Create(fname)
+	if err != nil {
+		return err
+	}
+
+	if err := g.tmpl.Lookup("enums.go.tpl").Execute(f, enums); err != nil {
+		return err
+	}
+
+	f.Close()
 	goimports := exec.Command("goimports", "-w", f.Name())
 	goimports.Dir = path.Dir(f.Name())
 	if output, err := goimports.CombinedOutput(); err != nil {

@@ -1,46 +1,32 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
 	"github.com/ioj/sqlty/compiler"
+	"github.com/ioj/sqlty/db"
+	"github.com/ioj/sqlty/generator"
+	"github.com/ioj/sqlty/stmt"
 )
 
 func main() {
-	/*
-		ctx := context.Background()
-		conn, err := pgconn.Connect(ctx, "postgres://localhost/test1")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer conn.Close(context.Background())
-
-		// res, err := conn.Prepare(ctx, "", "SELECT * FROM ng_private.workspace where id = $1 LIMIT 5", []uint32{})
-		res, err := conn.Prepare(ctx, "", `insert into bleh (col1, col2) values ($1, $2) returning col1`, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Printf("%+v\n", res)
-	*/
-
 	// queries, err := compiler.CompileFile("compiler/_queries/select_1.sql")
 	queries, err := compiler.CompileString("q", `
 		/*
-			@name whatever
-			@notNullParams  id, dupa.PAKA, bleh
-			@param dupa ((oko, paka, blada, sraka )...)
-			@param bleh (...)
-			@paramStructName oczko
-			@returnValueName dupsko
+			@name foobar_by_id
+			@notNullParams id
 			@many
 		*/
-		-- ble ble bla
-		--
-		-- bla bla bla
-		-- bo bo
-		SELECT * FROM users where id = :id AND :dupa AND :bleh OR whatever LIKE '%pipsko%' AND :id = 5;
+		SELECT * FROM test2 WHERE id = :id;
+
+		/*
+			@name foobar_by_col
+			@param timestamps ((ts1, ts2)...)
+			@exec
+		*/
+		INSERT INTO test2 (ts1, ts2) VALUES :timestamps;
 	`)
 	if err != nil {
 		if perr, ok := err.(*compiler.ErrCompilationFailed); ok {
@@ -48,13 +34,58 @@ func main() {
 				fmt.Println(err.Sprintf())
 			}
 			return
-		} else {
-			log.Fatal(err)
 		}
+
+		log.Fatal(err)
 	}
 
+	resolver, err := db.NewResolver(context.Background(), "postgres://localhost/sqlty_test")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resolver.Close()
+
+	stmtqueries := &stmt.Queries{PackageName: "sql"}
+
 	for _, q := range queries {
-		fmt.Println(q)
-		fmt.Println(q.Statement())
+		fmt.Println(q.PreparedQuery())
+		params, returnvals, err := resolver.ResolveTypes(context.Background(),
+			q.PreparedQuery(), q.NotNullArray())
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for n, p := range params {
+			fmt.Printf("$%v: %+v\n", n+1, p)
+		}
+
+		fmt.Println("---")
+
+		for _, rv := range returnvals {
+			fmt.Printf("%v: %+v\n", rv.Name, rv.Type)
+		}
+
+		stmtq, err := q.StmtQuery(params, returnvals)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf("%+v\n", *stmtq)
+
+		stmtqueries.Queries = append(stmtqueries.Queries, stmtq)
+	}
+
+	gen, err := generator.New("./templates/*.go.tpl")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	enums := &stmt.Enums{PackageName: "sql", Enums: resolver.Enums()}
+	if err := gen.Enums("/home/ioj/projects/sqlty-gen/sql", enums); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := gen.Queries("/home/ioj/projects/sqlty-gen/sql/generated.go", stmtqueries); err != nil {
+		log.Fatal(err)
 	}
 }

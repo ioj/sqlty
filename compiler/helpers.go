@@ -15,19 +15,19 @@ import (
 var identFix = regexp.MustCompile(`[^\pL\pN_]`)
 
 type structNameNorm struct {
-	private bool
-	keys    map[string][]string
+	keys map[string][]string
 }
 
-// if private is true, keys are being normalized to camel case
-// with the first letter being lower-cased
-func newStructNameNorm(private bool) *structNameNorm {
-	return &structNameNorm{private: private, keys: make(map[string][]string)}
+func newStructNameNorm() *structNameNorm {
+	return &structNameNorm{keys: make(map[string][]string)}
 }
 
 // Add returns a normalized (snake->camel) orig or error, if the
 // resulting normalized key was already added before.
-func (snn *structNameNorm) Add(orig string) (string, error) {
+//
+// If private is true, keys are being normalized to camel case
+// with the first letter being lower-cased
+func (snn *structNameNorm) Add(orig string, private bool) (string, error) {
 	normalized := identFix.ReplaceAllString(orig, "_")
 	normalized = snaker.SnakeToCamel(normalized)
 	if len(normalized) == 0 {
@@ -36,14 +36,14 @@ func (snn *structNameNorm) Add(orig string) (string, error) {
 
 	r, _ := utf8.DecodeRuneInString(normalized)
 	if unicode.IsDigit(r) {
-		if snn.private {
+		if private {
 			normalized = "_" + normalized
 		} else {
 			normalized = "X_" + normalized
 		}
 	}
 
-	if snn.private {
+	if private {
 		normalized = strings.ToLower(normalized[:1]) + normalized[1:]
 	}
 

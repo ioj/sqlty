@@ -352,9 +352,9 @@ func (q *Query) StmtQuery(ptypes []stmt.Type, returns []stmt.Param) (*stmt.Query
 	}
 
 	ptypeidx := 0
-	pnames := newStructNameNorm(private)
+	pnames := newStructNameNorm()
 	for _, p := range q.Params(Scalar) {
-		normalized, err := pnames.Add(p.definition.Value)
+		normalized, err := pnames.Add(p.definition.Value, private)
 		if err != nil {
 			return nil, err
 		}
@@ -367,7 +367,7 @@ func (q *Query) StmtQuery(ptypes []stmt.Type, returns []stmt.Param) (*stmt.Query
 	}
 
 	for _, p := range q.Params(Spread) {
-		normalized, err := pnames.Add(p.definition.Value)
+		normalized, err := pnames.Add(p.definition.Value, private)
 		if err != nil {
 			return nil, err
 		}
@@ -380,15 +380,15 @@ func (q *Query) StmtQuery(ptypes []stmt.Type, returns []stmt.Param) (*stmt.Query
 	}
 
 	for _, p := range q.Params(StructSpread) {
-		normalized, err := pnames.Add(p.definition.Value)
+		normalized, err := pnames.Add(p.definition.Value, false)
 		if err != nil {
 			return nil, err
 		}
 
-		s := stmt.Struct{Name: normalized}
-		structkeynames := newStructNameNorm(false)
+		s := stmt.Struct{Name: normalized, ShouldRender: true}
+		structkeynames := newStructNameNorm()
 		for _, sp := range p.Keys() {
-			normalizedkey, err := structkeynames.Add(sp.Name())
+			normalizedkey, err := structkeynames.Add(sp.Name(), false)
 			if err != nil {
 				return nil, err
 			}
@@ -404,8 +404,17 @@ func (q *Query) StmtQuery(ptypes []stmt.Type, returns []stmt.Param) (*stmt.Query
 
 	// Handle return value: normalize return value struct name, struct fields,
 	// make sure that there are no duplicate struct field names.
+	var returnValueName string
+	if q.returnValueName != nil {
+		returnValueName = q.returnValueName.Value
+	}
+
+	if returnValueName == "" {
+		returnValueName = stmtq.Name + "Row"
+	}
+
 	stmtq.Returns = stmt.Struct{
-		Name:   snaker.SnakeToCamel(q.returnValueName.Value),
+		Name:   snaker.SnakeToCamel(returnValueName),
 		Params: returns,
 	}
 
@@ -413,15 +422,19 @@ func (q *Query) StmtQuery(ptypes []stmt.Type, returns []stmt.Param) (*stmt.Query
 		stmtq.Returns.Name = stmtq.Name + "Row"
 	}
 
-	retparams := newStructNameNorm(false)
+	retparams := newStructNameNorm()
 	for n, param := range stmtq.Returns.Params {
-		normalized, err := retparams.Add(param.Name)
+		normalized, err := retparams.Add(param.Name, false)
 		if err != nil {
 			return nil, err
 		}
 
 		param.Name = normalized
 		stmtq.Returns.Params[n] = param
+	}
+
+	if len(stmtq.Returns.Params) >= 2 {
+		stmtq.Returns.ShouldRender = true
 	}
 
 	return stmtq, nil

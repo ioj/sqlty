@@ -65,7 +65,15 @@ func (r *Resolver) OIDToType(oid uint32, nullable bool) *stmt.Type {
 	return nil
 }
 
+func (r *Resolver) Enums() []*stmt.Enum {
+	return r.types.Enums()
+}
+
 func (r *Resolver) getNullableAttrs(ctx context.Context, attrs []*pgAttr) error {
+	if len(attrs) == 0 {
+		return nil
+	}
+
 	var params []string
 
 	for _, a := range attrs {
