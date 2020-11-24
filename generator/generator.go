@@ -83,9 +83,9 @@ func New(templatepath string) (*Generator, error) {
 	return g, nil
 }
 
-func (g *Generator) Queries(fname string, q *stmt.Queries) error {
-	if q == nil || len(q.Queries) == 0 {
-		return errors.New("at least one query is required")
+func (g *Generator) Query(fname string, q *stmt.Query) error {
+	if q == nil {
+		return errors.New("query is required")
 	}
 
 	f, err := os.Create(fname)

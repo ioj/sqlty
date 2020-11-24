@@ -7,248 +7,243 @@ package {{.PackageName}}
   for all provided queries.
 */ -}}
 
-{{- range .Queries -}}
-  {{- /* Render struct spreads */ -}}
-  {{- range .Params.StructSpread }}
-    {{ if .ShouldRender }}
-      type {{ .Name }} struct {
-        {{- range .Params }}
-          {{ .Name }} {{ .Type.Name -}}
-        {{ end }}
-      }
-    {{ end }}
-  {{ end }}
-
-  {{- /* Render return args struct */ -}}
-  {{ if ne .Params.Name "" }}
-    type {{ .Params.Name }} struct {
-      {{- range .Params.Scalar }}
-        {{ .Name }} {{ .Type.Name -}}
-      {{ end }}{{ range .Params.Spread }}
-        {{ .Name }} []{{ .Type.Name -}}
-      {{ end }}{{ range .Params.StructSpread }}
-        {{ .Name }} []*{{ .Name -}}
-      {{ end }}
-    }
-  {{ end }}
-
-  {{- /* Render return struct */ -}}
-  {{ if .Returns.ShouldRender }}
-    type {{ .Returns.Name }} struct {
-      {{ range .Returns.Params }}
+{{- /* Render struct spreads */ -}}
+{{- range .Params.StructSpread }}
+  {{ if .ShouldRender }}
+    type {{ .Name }} struct {
+      {{- range .Params }}
         {{ .Name }} {{ .Type.Name -}}
       {{ end }}
     }
   {{ end }}
 {{ end }}
 
-{{- /* Render queries */ -}}
+{{- /* Render return args struct */ -}}
+{{ if ne .Params.Name "" }}
+  type {{ .Params.Name }} struct {
+    {{- range .Params.Scalar }}
+      {{ .Name }} {{ .Type.Name -}}
+    {{ end }}{{ range .Params.Spread }}
+      {{ .Name }} []{{ .Type.Name -}}
+    {{ end }}{{ range .Params.StructSpread }}
+      {{ .Name }} []*{{ .Name -}}
+    {{ end }}
+  }
+{{ end }}
 
-{{- range .Queries -}}
-  {{- $returnCols := len .Returns.Params}}
+{{- /* Render return struct */ -}}
+{{ if .Returns.ShouldRender }}
+  type {{ .Returns.Name }} struct {
+    {{ range .Returns.Params }}
+      {{ .Name }} {{ .Type.Name -}}
+    {{ end }}
+  }
+{{ end }}
 
-  {{- $returnType := printf "*%v" .Returns.Name }}
-  {{- $returnNilValue := "nil" }}
-  {{- $returnZeroValue := printf "&%v{}" .Returns.Name }}
+{{- /* Render query */ -}}
 
-  {{- if eq .ExecMode "exec" }}
-    {{- $returnType = "pgconn.CommandTag" }}
-    {{- $returnZeroValue := "make(pgconn.CommandTag, 0)" }}
+{{- $returnCols := len .Returns.Params}}
+
+{{- $returnType := printf "*%v" .Returns.Name }}
+{{- $returnNilValue := "nil" }}
+{{- $returnZeroValue := printf "&%v{}" .Returns.Name }}
+
+{{- if eq .ExecMode "exec" }}
+  {{- $returnType = "pgconn.CommandTag" }}
+  {{- $returnZeroValue := "make(pgconn.CommandTag, 0)" }}
+{{- end -}}
+{{- if eq $returnCols 1 -}}
+  {{- $returnType = firstParamTypeName .Returns.Params -}}
+  {{ if eq .ExecMode "one" -}}
+    {{- $returnNilValue = firstParamNilReturnValue .Returns.Params -}}
   {{- end -}}
-  {{- if eq $returnCols 1 -}}
-    {{- $returnType = firstParamTypeName .Returns.Params -}}
-    {{ if eq .ExecMode "one" -}}
-      {{- $returnNilValue = firstParamNilReturnValue .Returns.Params -}}
+  {{- $returnZeroValue = firstParamZeroReturnValue .Returns.Params -}}
+{{- end -}}
+
+{{ range .Comments }}
+  // {{ . -}}
+{{ end }}
+func (db *DB) {{ .Name }}(ctx context.Context
+  {{- if ne .Params.Name "" -}}
+
+    {{- /* If Params.Name is non-empty, render only one argument with its name as type */ -}}
+    , args *{{ .Params.Name }}
+
+  {{- else -}}
+
+    {{- /* Otherwise, iterate through basic params... */ -}}
+    {{- range .Params.Scalar -}}
+      , {{ .Name }} {{ .Type.Name }}
     {{- end -}}
-    {{- $returnZeroValue = firstParamZeroReturnValue .Returns.Params -}}
+
+    {{- /* Then render spread args as slices */ -}}
+    {{- range .Params.Spread -}}
+      , {{ .Name }} []{{ .Type.Name }}
+    {{- end -}}
+
+    {{- /* And finally struct spread args */ -}}
+    {{- range .Params.StructSpread -}}
+      , {{ .Name }} []*{{ .Name }}
+    {{- end -}}
+
   {{- end -}}
 
-  {{ range .Comments }}
-    // {{ . -}}
+  {{- /* End of function params */ -}}
+    ) (
+  {{- /* Start of return values */ -}}
+
+  {{- if eq .ExecMode "many" -}}
+    []
+  {{- end -}}
+  {{- $returnType -}}, error) {
+
+  {{- /* Start of function body */ -}}
+  {{- " " -}}
+
+  {{ $paramsAsStruct := ne .Params.Name "" -}}
+
+  {{- if hasParams . }}
+    {{- if $paramsAsStruct }}
+      // Return error when args are missing
+      if args == nil {
+        return {{ $returnNilValue }}, ErrNilArgs
+      }
+
+    {{ end }}
+    // Start building a list of arguments which will be passed to Exec/Query/QueryRow
+    sqltyStmtargs := []interface{}{
+      {{ range .Params.Scalar -}}
+        {{ if $paramsAsStruct }}args.{{ end }}{{ .Name -}},
+      {{ end }}
+    }
   {{ end }}
-  func (db *DB) {{ .Name }}(ctx context.Context
-    {{- if ne .Params.Name "" -}}
 
-      {{- /* If Params.Name is non-empty, render only one argument with its name as type */ -}}
-      , args *{{ .Params.Name }}
+  {{- if needsPrintf . }}
+    {{ $spreads := len .Params.Spread -}}
+    {{ $structSpreads := len .Params.StructSpread -}}
 
-    {{- else -}}
+    sqltyOffset := {{ len .Params.Scalar }} + 1
+    sqltySpreads := make([]string, 0, {{ $spreads }} + {{ $structSpreads }})
 
-      {{- /* Otherwise, iterate through basic params... */ -}}
-      {{- range .Params.Scalar -}}
-        , {{ .Name }} {{ .Type.Name }}
-      {{- end -}}
+    {{ if gt $spreads 0 }}
+      var sqltySpread []string
+      {{ range .Params.Spread }}
+        {{- $varname := .Name }}
+        {{- if $paramsAsStruct -}}
+          {{ $varname = printf "args.%v" .Name -}}
+        {{- end }}
 
-      {{- /* Then render spread args as slices */ -}}
-      {{- range .Params.Spread -}}
-        , {{ .Name }} []{{ .Type.Name }}
-      {{- end -}}
-
-      {{- /* And finally struct spread args */ -}}
-      {{- range .Params.StructSpread -}}
-        , {{ .Name }} []*{{ .Name }}
-      {{- end -}}
-
-    {{- end -}}
-
-    {{- /* End of function params */ -}}
-      ) (
-    {{- /* Start of return values */ -}}
-
-    {{- if eq .ExecMode "many" -}}
-      []
-    {{- end -}}
-    {{- $returnType -}}, error) {
-
-    {{- /* Start of function body */ -}}
-    {{- " " -}}
-
-    {{ $paramsAsStruct := ne .Params.Name "" -}}
-
-    {{- if hasParams . }}
-      {{- if $paramsAsStruct }}
-        // Return error when args are missing
-        if args == nil {
-          return {{ $returnNilValue }}, ErrNilArgs
+        if len({{ $varname }}) == 0 {
+          return {{ $returnNilValue }}, ErrEmptySpread
         }
 
+        sqltySpread = make([]string, len({{ $varname }}))
+        for sqltyN, sqltyA := range {{ $varname }} {
+          sqltySpread[sqltyN] = fmt.Sprintf("$%d", sqltyOffset)
+          sqltyStmtargs = append(sqltyStmtargs, sqltyA)
+          sqltyOffset++
+        }
+        sqltySpreads = append(sqltySpreads, strings.Join(sqltySpread, ","))
+
       {{ end }}
-      // Start building a list of arguments which will be passed to Exec/Query/QueryRow
-      sqltyStmtargs := []interface{}{
-        {{ range .Params.Scalar -}}
-          {{ if $paramsAsStruct }}args.{{ end }}{{ .Name -}},
-        {{ end }}
-      }
     {{ end }}
 
-    {{- if needsPrintf . }}
-      {{ $spreads := len .Params.Spread -}}
-      {{ $structSpreads := len .Params.StructSpread -}}
+    {{ if gt $structSpreads 0 }}
+      var sqltyStructSpread []string
+      {{ range .Params.StructSpread }}
 
-      sqltyOffset := {{ len .Params.Scalar }} + 1
-      sqltySpreads := make([]string, 0, {{ $spreads }} + {{ $structSpreads }})
+        {{ $varname := .Name }}
+        {{- if $paramsAsStruct -}}
+          {{ $varname = printf "args.%v" .Name -}}
+        {{- end }}
+        {{ $paramsLen := len .Params }}
+        if len({{ $varname }}) == 0 {
+          return {{ $returnNilValue }}, ErrEmptyStructSpreadList
+        }
 
-      {{ if gt $spreads 0 }}
-        var sqltySpread []string
-        {{ range .Params.Spread }}
-          {{- $varname := .Name }}
-          {{- if $paramsAsStruct -}}
-            {{ $varname = printf "args.%v" .Name -}}
-          {{- end }}
-
-          if len({{ $varname }}) == 0 {
-            return {{ $returnNilValue }}, ErrEmptySpread
-          }
-
-          sqltySpread = make([]string, len({{ $varname }}))
-          for sqltyN, sqltyA := range {{ $varname }} {
+        for _, sqltySs := range {{ $varname }} {
+          sqltySpread := make([]string, {{ $paramsLen }})
+          for sqltyN := 0; sqltyN < {{ $paramsLen }}; sqltyN++ {
             sqltySpread[sqltyN] = fmt.Sprintf("$%d", sqltyOffset)
-            sqltyStmtargs = append(sqltyStmtargs, sqltyA)
             sqltyOffset++
           }
-          sqltySpreads = append(sqltySpreads, strings.Join(sqltySpread, ","))
+          sqltyStmtargs = append(sqltyStmtargs,
+            {{- range .Params -}}
+              sqltySs.{{ .Name }},
+            {{- end -}}
+          )
+          sqltyStructSpread = append(sqltyStructSpread, "(" + strings.Join(sqltySpread, ",") + ")")
+        }
+        sqltySpreads = append(sqltySpreads, strings.Join(sqltyStructSpread, ","))
+        sqltyStructSpread = nil
 
-        {{ end }}
       {{ end }}
-
-      {{ if gt $structSpreads 0 }}
-        var sqltyStructSpread []string
-        {{ range .Params.StructSpread }}
-
-          {{ $varname := .Name }}
-          {{- if $paramsAsStruct -}}
-            {{ $varname = printf "args.%v" .Name -}}
-          {{- end }}
-          {{ $paramsLen := len .Params }}
-          if len({{ $varname }}) == 0 {
-            return {{ $returnNilValue }}, ErrEmptyStructSpreadList
-          }
-
-          for _, sqltySs := range {{ $varname }} {
-            sqltySpread := make([]string, {{ $paramsLen }})
-            for sqltyN := 0; sqltyN < {{ $paramsLen }}; sqltyN++ {
-              sqltySpread[sqltyN] = fmt.Sprintf("$%d", sqltyOffset)
-              sqltyOffset++
-            }
-            sqltyStmtargs = append(sqltyStmtargs,
-              {{- range .Params -}}
-                sqltySs.{{ .Name }},
-              {{- end -}}
-            )
-            sqltyStructSpread = append(sqltyStructSpread, "(" + strings.Join(sqltySpread, ",") + ")")
-          }
-          sqltySpreads = append(sqltySpreads, strings.Join(sqltyStructSpread, ","))
-          sqltyStructSpread = nil
-
-        {{ end }}
-      {{ end }}
-
-      // Convert []string to []interface
-      sqltyIspreads := make([]interface{}, len(sqltySpreads))
-      for sqltyN := range sqltySpreads {
-        sqltyIspreads[sqltyN] = sqltySpreads[sqltyN]
-      }
-      sqltyStmt := fmt.Sprintf(`{{- .Statement -}}`, sqltyIspreads...)
-
-    {{ else }}
-      sqltyStmt := `{{- .Statement -}}`
     {{ end }}
 
-    {{ if eq .ExecMode "many" }}
-      {{- /* Exec mode: many */ -}}
+    // Convert []string to []interface
+    sqltyIspreads := make([]interface{}, len(sqltySpreads))
+    for sqltyN := range sqltySpreads {
+      sqltyIspreads[sqltyN] = sqltySpreads[sqltyN]
+    }
+    sqltyStmt := fmt.Sprintf(`{{- .Statement -}}`, sqltyIspreads...)
 
-      sqltyRows, err := db.tx.Query(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }})
-      if err != nil {
-        return {{ $returnNilValue }}, err
-      }
-      defer sqltyRows.Close()
+  {{ else }}
+    sqltyStmt := `{{- .Statement -}}`
+  {{ end }}
 
-      var sqltyResults []{{ $returnType }}
-      for sqltyRows.Next() {
-        sqltyR := {{ $returnZeroValue }}
-        {{ if eq $returnCols 1 }}
-          if err := sqltyRows.Scan(&sqltyR); err != nil {
-            return {{ $returnNilValue }}, err
-          }
-        {{ else }}
-          if err := sqltyRows.Scan(
-            {{- range .Returns.Params -}}
-              &sqltyR.{{ .Name }},
-            {{- end -}}
-          ); err != nil {
+  {{ if eq .ExecMode "many" }}
+    {{- /* Exec mode: many */ -}}
+
+    sqltyRows, err := db.tx.Query(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }})
+    if err != nil {
+      return {{ $returnNilValue }}, err
+    }
+    defer sqltyRows.Close()
+
+    var sqltyResults []{{ $returnType }}
+    for sqltyRows.Next() {
+      sqltyR := {{ $returnZeroValue }}
+      {{ if eq $returnCols 1 }}
+        if err := sqltyRows.Scan(&sqltyR); err != nil {
           return {{ $returnNilValue }}, err
-          }
-        {{ end }}
-        sqltyResults = append(sqltyResults, sqltyR)
-      }
-
-      return sqltyResults, sqltyRows.Err()
-
-    {{- else if eq .ExecMode "one" }}
-      {{- /* Exec mode: one */ -}}
-
-      {{- if eq $returnCols 1 -}}
-        sqltyResult := {{ $returnZeroValue }}
-        err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(&sqltyResult)
-      {{ else -}}
-        sqltyResult := &{{ .Name }}Row{}
-        err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(
-          {{- range .Returns -}}
-            &sqltyResult.{{ .Name }},
+        }
+      {{ else }}
+        if err := sqltyRows.Scan(
+          {{- range .Returns.Params -}}
+            &sqltyR.{{ .Name }},
           {{- end -}}
-        )
-      {{ end -}}
-      if err != nil {
+        ); err != nil {
         return {{ $returnNilValue }}, err
-      }
+        }
+      {{ end }}
+      sqltyResults = append(sqltyResults, sqltyR)
+    }
 
-      return sqltyResult, nil
+    return sqltyResults, sqltyRows.Err()
 
-    {{- else }}
-      {{- /* Exec mode: exec */ -}}
+  {{- else if eq .ExecMode "one" }}
+    {{- /* Exec mode: one */ -}}
 
-      return db.tx.Exec(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }})
-    {{- end -}}
-  }
+    {{- if eq $returnCols 1 -}}
+      sqltyResult := {{ $returnZeroValue }}
+      err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(&sqltyResult)
+    {{ else -}}
+      sqltyResult := &{{ .Name }}Row{}
+      err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(
+        {{- range .Returns -}}
+          &sqltyResult.{{ .Name }},
+        {{- end -}}
+      )
+    {{ end -}}
+    if err != nil {
+      return {{ $returnNilValue }}, err
+    }
 
-{{ end -}}
+    return sqltyResult, nil
+
+  {{- else }}
+    {{- /* Exec mode: exec */ -}}
+
+    return db.tx.Exec(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }})
+  {{- end -}}
+}

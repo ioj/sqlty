@@ -304,16 +304,22 @@ func (q *Query) PreparedQuery() string {
 
 // StmtQuery returns a stmt.Query based on internal values and type resolutions for arguments
 // and return values provided in parameters.
-func (q *Query) StmtQuery(ptypes []stmt.Type, returns []stmt.Param) (*stmt.Query, error) {
+func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns []stmt.Param) (*stmt.Query, error) {
 	stmtq := &stmt.Query{
-		Statement: q.Statement(),
-		Comments:  q.Comments,
+		PackageName: packageName,
+		Statement:   q.Statement(),
+		Comments:    q.Comments,
 	}
 
 	// Set the name. If it's empty, then use the name derived from the filename.
 	// If there are multiple queries in the filename, they'll be fixed later on during
 	// per-filename checks.
-	name := q.name.Value
+	var name string
+
+	if q.name != nil {
+		name = q.name.Value
+	}
+
 	if name == "" {
 		// Get filename without extension
 		name = strings.TrimSuffix(path.Base(q.Filename), path.Ext(q.Filename))

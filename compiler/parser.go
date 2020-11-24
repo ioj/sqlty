@@ -12,16 +12,16 @@ type parserListener struct {
 	filename string
 	errors   *errorListener
 
+	Query *Query
+
 	currentParam           *Param
-	currentQuery           *Query
 	currentStructTransform []*StructKey
 	currentNotNull         []*token
-	queries                []*Query
 }
 
 // EnterQuery is called when a new query (annotations + the query itself) is encountered.
 func (s *parserListener) EnterQuery(ctx *parser.QueryContext) {
-	s.currentQuery = &Query{
+	s.Query = &Query{
 		Filename: s.filename,
 		paramIdx: make(map[ParamType]int),
 		params:   make(map[string]*Param),
@@ -39,7 +39,7 @@ func (s *parserListener) ExitParamTag(ctx *parser.ParamTagContext) {
 	// The current param is nil when it was already defined before.
 	if s.currentParam != nil {
 		lname := strings.ToLower(s.currentParam.definition.Value)
-		s.currentQuery.params[lname] = s.currentParam
+		s.Query.params[lname] = s.currentParam
 		s.currentParam = nil
 	}
 }
@@ -50,7 +50,7 @@ func (s *parserListener) EnterParamName(ctx *parser.ParamNameContext) {
 	t := newToken(ctx.BaseParserRuleContext)
 	s.currentParam.definition.Value = t.Value
 	lname := strings.ToLower(s.currentParam.definition.Value)
-	if alreadyDefined, ok := s.currentQuery.params[lname]; ok {
+	if alreadyDefined, ok := s.Query.params[lname]; ok {
 		s.currentParam = nil
 		s.errors.AlreadyDeclaredError("parameter", alreadyDefined.definition, t)
 	}
@@ -63,8 +63,8 @@ func (s *parserListener) ExitSpreadTransform(ctx *parser.SpreadTransformContext)
 	}
 
 	s.currentParam.Type = Spread
-	s.currentParam.Idx = s.currentQuery.paramIdx[Spread]
-	s.currentQuery.paramIdx[Spread]++
+	s.currentParam.Idx = s.Query.paramIdx[Spread]
+	s.Query.paramIdx[Spread]++
 }
 
 // ExitStructTransform is called when the parser has finished parsing the struct field
@@ -98,15 +98,8 @@ func (s *parserListener) ExitStructSpreadTransform(ctx *parser.StructSpreadTrans
 	}
 
 	s.currentParam.Type = StructSpread
-	s.currentParam.Idx = s.currentQuery.paramIdx[StructSpread]
-	s.currentQuery.paramIdx[StructSpread]++
-}
-
-// ExitQuery is called when production query is exited.
-func (s *parserListener) ExitQuery(ctx *parser.QueryContext) {
-	if s.currentQuery != nil {
-		s.queries = append(s.queries, s.currentQuery)
-	}
+	s.currentParam.Idx = s.Query.paramIdx[StructSpread]
+	s.Query.paramIdx[StructSpread]++
 }
 
 // EnterKey is called when production key is entered.
@@ -121,10 +114,10 @@ func (s *parserListener) EnterKey(ctx *parser.KeyContext) {
 // EnterParamStructNameId is called when production paramStructNameId is entered.
 func (s *parserListener) EnterParamStructNameId(ctx *parser.ParamStructNameIdContext) {
 	t := newToken(ctx.BaseParserRuleContext)
-	if s.currentQuery.paramStructName == nil {
-		s.currentQuery.paramStructName = t
+	if s.Query.paramStructName == nil {
+		s.Query.paramStructName = t
 	} else {
-		s.errors.AlreadyDeclaredError("param struct name", s.currentQuery.paramStructName, t)
+		s.errors.AlreadyDeclaredError("param struct name", s.Query.paramStructName, t)
 	}
 }
 
@@ -135,37 +128,37 @@ func (s *parserListener) EnterNotNullParam(ctx *parser.NotNullParamContext) {
 
 // ExitNotNullParamsTag is called when production notNullParamsTag is exited.
 func (s *parserListener) ExitNotNullParamsTag(ctx *parser.NotNullParamsTagContext) {
-	s.currentQuery.notNullParams = s.currentNotNull
+	s.Query.notNullParams = s.currentNotNull
 	s.currentNotNull = nil
 }
 
 // EnterModeTag is called when production modeTag is entered.
 func (s *parserListener) EnterModeTag(ctx *parser.ModeTagContext) {
 	t := newToken(ctx.BaseParserRuleContext)
-	if s.currentQuery.execMode == nil {
-		s.currentQuery.execMode = t
+	if s.Query.execMode == nil {
+		s.Query.execMode = t
 	} else {
-		s.errors.AlreadyDeclaredError("exec mode", s.currentQuery.execMode, t)
+		s.errors.AlreadyDeclaredError("exec mode", s.Query.execMode, t)
 	}
 }
 
 // EnterQueryName is called when production queryName is entered.
 func (s *parserListener) EnterQueryName(ctx *parser.QueryNameContext) {
 	t := newToken(ctx.BaseParserRuleContext)
-	if s.currentQuery.name == nil {
-		s.currentQuery.name = t
+	if s.Query.name == nil {
+		s.Query.name = t
 	} else {
-		s.errors.AlreadyDeclaredError("query name", s.currentQuery.name, t)
+		s.errors.AlreadyDeclaredError("query name", s.Query.name, t)
 	}
 }
 
 // EnterReturnValueNameId is called when production returnValueNameId is entered.
 func (s *parserListener) EnterReturnValueNameId(ctx *parser.ReturnValueNameIdContext) {
 	t := newToken(ctx.BaseParserRuleContext)
-	if s.currentQuery.returnValueName == nil {
-		s.currentQuery.returnValueName = t
+	if s.Query.returnValueName == nil {
+		s.Query.returnValueName = t
 	} else {
-		s.errors.AlreadyDeclaredError("return value name", s.currentQuery.returnValueName, t)
+		s.errors.AlreadyDeclaredError("return value name", s.Query.returnValueName, t)
 	}
 }
 
@@ -180,7 +173,7 @@ func (s *parserListener) EnterLineComment(ctx *parser.LineCommentContext) {
 		if len(line) > 0 && line[0] == ' ' {
 			line = line[1:]
 		}
-		s.currentQuery.Comments = append(s.currentQuery.Comments, line)
+		s.Query.Comments = append(s.Query.Comments, line)
 	}
 }
 
@@ -194,7 +187,7 @@ func (s *parserListener) EnterWord(ctx *parser.WordContext) {
 		if idx == -1 {
 			break
 		}
-		s.currentQuery.percents = append(s.currentQuery.percents, &token{
+		s.Query.percents = append(s.Query.percents, &token{
 			Start:  start + offset + idx,
 			Stop:   start + offset + idx,
 			Line:   ctx.GetStart().GetLine(),
@@ -215,17 +208,17 @@ func (s *parserListener) EnterParamId(ctx *parser.ParamIdContext) {
 	name := input.GetInputStream().GetText(t.Start, t.Stop)
 	lname := strings.ToLower(name)
 
-	param, ok := s.currentQuery.params[lname]
+	param, ok := s.Query.params[lname]
 	if ok {
 		param.uses = append(param.uses, t)
 	} else {
-		s.currentQuery.params[lname] = &Param{
+		s.Query.params[lname] = &Param{
 			definition: &token{Value: name},
-			Idx:        s.currentQuery.paramIdx[Scalar],
+			Idx:        s.Query.paramIdx[Scalar],
 			Type:       Scalar,
 			uses:       []*token{t},
 		}
-		s.currentQuery.paramIdx[Scalar]++
+		s.Query.paramIdx[Scalar]++
 	}
 }
 
@@ -234,17 +227,15 @@ func (s *parserListener) EnterStatementBody(ctx *parser.StatementBodyContext) {
 	input := ctx.GetStart()
 	t := newToken(ctx.BaseParserRuleContext)
 	t.Value = input.GetInputStream().GetText(t.Start, t.Stop)
-	s.currentQuery.statement = t
+	s.Query.statement = t
 }
 
 func (s *parserListener) CheckUnusedParameters() error {
 	errors := false
-	for _, q := range s.queries {
-		for _, p := range q.params {
-			if len(p.uses) == 0 {
-				errors = true
-				s.errors.UnusedParamError(p)
-			}
+	for _, p := range s.Query.params {
+		if len(p.uses) == 0 {
+			errors = true
+			s.errors.UnusedParamError(p)
 		}
 	}
 
@@ -256,38 +247,34 @@ func (s *parserListener) CheckUnusedParameters() error {
 }
 
 func (s *parserListener) PopulateNotNullParams() {
-	for _, q := range s.queries {
-		for _, p := range q.notNullParams {
-			segments := strings.SplitN(strings.ToLower(p.Value), ".", 2)
-			param, ok := q.params[segments[0]]
+	for _, p := range s.Query.notNullParams {
+		segments := strings.SplitN(strings.ToLower(p.Value), ".", 2)
+		param, ok := s.Query.params[segments[0]]
+		if !ok {
+			s.errors.MissingParamError(p)
+			continue
+		}
+
+		switch len(segments) {
+		case 1:
+			// This is 'plain' parameter
+			param.NotNull = true
+		case 2:
+			// This is struct field in the struct spread param
+			structkey, ok := param.keys[segments[1]]
 			if !ok {
 				s.errors.MissingParamError(p)
-				continue
+			} else {
+				structkey.NotNull = true
 			}
-
-			switch len(segments) {
-			case 1:
-				// This is 'plain' parameter
-				param.NotNull = true
-			case 2:
-				// This is struct field in the struct spread param
-				structkey, ok := param.keys[segments[1]]
-				if !ok {
-					s.errors.MissingParamError(p)
-				} else {
-					structkey.NotNull = true
-				}
-			default:
-				panic("parser error")
-			}
+		default:
+			panic("parser error")
 		}
 	}
 }
 
 func (s *parserListener) VerifyExecMode() {
-	for _, q := range s.queries {
-		if q.execMode == nil {
-			s.errors.MissingExecModeError(q.statement)
-		}
+	if s.Query.execMode == nil {
+		s.errors.MissingExecModeError(s.Query.statement)
 	}
 }

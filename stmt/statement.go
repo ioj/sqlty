@@ -40,17 +40,14 @@ type Params struct {
 }
 
 type Query struct {
+	PackageName string
+
 	Name      string
 	Statement string
 	ExecMode  ExecMode
 	Comments  []string
 	Params    Params
 	Returns   Struct
-}
-
-type Queries struct {
-	PackageName string
-	Queries     []*Query
 }
 
 func (p *Params) None() bool {

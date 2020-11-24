@@ -7,7 +7,7 @@ import (
 	"github.com/ioj/sqlty/compiler/parser"
 )
 
-func compile(fname string, input antlr.CharStream) ([]*Query, error) {
+func compile(fname string, input antlr.CharStream) (*Query, error) {
 	pl := &parserListener{
 		filename: fname,
 		errors:   newErrorListener(fname),
@@ -23,23 +23,25 @@ func compile(fname string, input antlr.CharStream) ([]*Query, error) {
 
 	antlr.ParseTreeWalkerDefault.Walk(pl, p.Input())
 
+	if pl.Query == nil {
+		return nil, nil
+	}
+
 	pl.CheckUnusedParameters()
 	pl.PopulateNotNullParams()
 	pl.VerifyExecMode()
 
-	for _, q := range pl.queries {
-		fmt.Println(q.DebugString())
-	}
+	fmt.Println(pl.Query.DebugString())
 
 	if err := pl.errors.Error(); err != nil {
 		return nil, err
 	}
 
-	return pl.queries, nil
+	return pl.Query, nil
 }
 
 // CompileFile returns the list of compiled queries based on contents of a file.
-func CompileFile(fname string) ([]*Query, error) {
+func CompileFile(fname string) (*Query, error) {
 	input, err := antlr.NewFileStream(fname)
 	if err != nil {
 		return nil, err
@@ -50,7 +52,7 @@ func CompileFile(fname string) ([]*Query, error) {
 
 // CompileString returns the list of compiled queries based on the input provided
 // as a string.
-func CompileString(defaultQueryName string, data string) ([]*Query, error) {
+func CompileString(defaultQueryName string, data string) (*Query, error) {
 	input := antlr.NewInputStream(data)
 	return compile(defaultQueryName, input)
 }
