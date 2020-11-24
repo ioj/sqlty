@@ -4,7 +4,7 @@ options {
 	tokenVocab = SQLLexer;
 }
 
-input: query+ EOF;
+input: query EOF;
 
 query: queryDef statement;
 
