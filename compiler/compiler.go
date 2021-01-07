@@ -1,8 +1,6 @@
 package compiler
 
 import (
-	"fmt"
-
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/ioj/sqlty/compiler/parser"
 )
@@ -31,7 +29,7 @@ func compile(fname string, input antlr.CharStream) (*Query, error) {
 	pl.PopulateNotNullParams()
 	pl.VerifyExecMode()
 
-	fmt.Println(pl.Query.DebugString())
+	// fmt.Println(pl.Query.DebugString())
 
 	if err := pl.errors.Error(); err != nil {
 		return nil, err
