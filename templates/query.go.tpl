@@ -230,7 +230,7 @@ func (db *DB) {{ .Name }}(ctx context.Context
     {{ else -}}
       sqltyResult := &{{ .Name }}Row{}
       err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(
-        {{- range .Returns -}}
+        {{- range .Returns.Params -}}
           &sqltyResult.{{ .Name }},
         {{- end -}}
       )
