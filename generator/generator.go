@@ -2,9 +2,7 @@ package generator
 
 import (
 	"errors"
-	"fmt"
 	"os"
-	"os/exec"
 	"path"
 	"regexp"
 	"text/template"
@@ -97,15 +95,7 @@ func (g *Generator) Query(fname string, q *stmt.Query) error {
 		return err
 	}
 
-	f.Close()
-
-	goimports := exec.Command("goimports", "-w", f.Name())
-	goimports.Dir = path.Dir(f.Name())
-	if output, err := goimports.CombinedOutput(); err != nil {
-		return fmt.Errorf("goimports error: %v, %v", err, string(output))
-	}
-
-	return nil
+	return f.Close()
 }
 
 func (g *Generator) Enums(pkgpath string, enums *stmt.Enums) error {
@@ -125,136 +115,5 @@ func (g *Generator) Enums(pkgpath string, enums *stmt.Enums) error {
 		return err
 	}
 
-	f.Close()
-	goimports := exec.Command("goimports", "-w", f.Name())
-	goimports.Dir = path.Dir(f.Name())
-	if output, err := goimports.CombinedOutput(); err != nil {
-		return fmt.Errorf("goimports error: %v, %v", err, string(output))
-	}
-
-	return nil
+	return f.Close()
 }
-
-/*
-func main() {
-	tmpl, err := template.New("").Funcs(tmplfn).ParseGlob("../templates/*.go.tpl")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	f, err := os.Create("/home/ioj/projects/sqlty-gen/generated.go")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-			params := &StatementDef{
-				PackageName: "sql",
-				Name:        "WhateverBleh",
-				ExecMode:    "many",
-				Statement: `SELECT *
-		FROM temp;`,
-				Comments: []string{
-					"SampleFunction is a sample function.",
-					"It's nice and does some things.",
-				},
-				Params: Params{
-					AsStruct: true,
-					Basic: []Param{
-						{"ID", Type{"pgtype.UUID", "&pgtype.UUID{}", true}},
-						{"Limit", Type{"int", "0", false}},
-					},
-					Spread: []Param{
-						{"Cats", Type{"string", "\"\"", false}},
-						{"Dogs", Type{"string", "\"\"", false}},
-					},
-					StructPick: StructPick{
-						Name: "BlehBloh",
-						Params: []Param{
-							{"ID", Type{"pgtype.UUID", "&pgtype.UUID{}", true}},
-							{"Name", Type{"string", "\"\"", false}},
-							{"Cat", Type{"string", "\"\"", false}},
-							{"Dog", Type{"string", "\"\"", false}},
-						},
-					},
-				},
-				Returns: []Param{
-					{"ID", Type{"pgtype.UUID", "&pgtype.UUID{}", true}},
-					{"Name", Type{"string", "\"\"", false}},
-				},
-			}
-	params := &stmt.Query{
-		PackageName: "sql",
-		Name:        "AddStocks",
-		ExecMode:    "exec",
-		Statement:   "insert into stocks (symbol, name, market, currency, enabled) values %[1]v",
-		Params: stmt.Params{
-			AsStruct: false,
-			/*
-				Basic: []Param{
-					{"ID", Type{"pgtype.UUID", "pgtype.UUID{}", false}},
-					{"Limit", Type{"int", "0", false}},
-				},
-			StructSpread: stmt.StructSpread{
-				Name: "Stock",
-				Params: []stmt.Param{
-					{"Symbol", stmt.Type{"string", "\"\"", false}},
-					{"Name", stmt.Type{"string", "\"\"", false}},
-					{"Market", stmt.Type{"string", "\"\"", false}},
-					{"Currency", stmt.Type{"string", "\"\"", false}},
-					{"Enabled", stmt.Type{"bool", "false", false}},
-				},
-			},
-		},
-		/*
-			Returns: []Param{
-				{"ID", Type{"pgtype.UUID", "pgtype.UUID{}", false}},
-				{"Name", Type{"string", "\"\"", false}},
-				{"Active", Type{"bool", "\"\"", false}},
-			},*_/
-	}
-
-	if err := params.Validate(); err != nil {
-		log.Fatal(err)
-	}
-
-	if err := tmpl.Lookup("query.go.tpl").Funcs(tmplfn).Execute(f, params); err != nil {
-		log.Fatal(err)
-	}
-
-	f.Close()
-
-	goimports := exec.Command("goimports", "-w", f.Name())
-	goimports.Dir = path.Dir(f.Name())
-	if output, err := goimports.CombinedOutput(); err != nil {
-		fmt.Println("-- goimports error --")
-		fmt.Println(string(output))
-		fmt.Println(err)
-		fmt.Printf("-- goimports error end --\n\n")
-	}
-
-		if output, err := exec.Command("gofmt", "-w", f.Name()).CombinedOutput(); err != nil {
-			fmt.Println("-- gofmt error --")
-			fmt.Println(string(output))
-			fmt.Println(err)
-			fmt.Printf("-- gofmt error end --\n\n")
-		}
-
-	f, err = os.Open(f.Name())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	data, err := ioutil.ReadAll(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-	f.Close()
-
-	fmt.Println(string(data))
-	fmt.Printf("\n\n(%v)\n", f.Name())
-
-		if err := os.Remove(f.Name()); err != nil {
-			log.Fatal(err)
-		}
-}
-*/
