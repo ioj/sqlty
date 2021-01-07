@@ -14,7 +14,7 @@ statement: lineComment? statementBody EOF_STATEMENT;
 
 lineComment: LINE_COMMENT LINE_COMMENT*;
 
-statementBody: word (param | word)*;
+statementBody: word (param | word | lineComment)*;
 
 word: WORD | ID | STRING;
 

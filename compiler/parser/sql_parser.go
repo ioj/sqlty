@@ -16,7 +16,7 @@ var _ = reflect.Copy
 var _ = strconv.Itoa
 
 var parserATN = []uint16{
-	3, 24715, 42794, 33075, 47597, 16764, 15335, 30598, 22884, 3, 27, 180,
+	3, 24715, 42794, 33075, 47597, 16764, 15335, 30598, 22884, 3, 27, 181,
 	4, 2, 9, 2, 4, 3, 9, 3, 4, 4, 9, 4, 4, 5, 9, 5, 4, 6, 9, 6, 4, 7, 9, 7,
 	4, 8, 9, 8, 4, 9, 9, 9, 4, 10, 9, 10, 4, 11, 9, 11, 4, 12, 9, 12, 4, 13,
 	9, 13, 4, 14, 9, 14, 4, 15, 9, 15, 4, 16, 9, 16, 4, 17, 9, 17, 4, 18, 9,
@@ -24,69 +24,70 @@ var parserATN = []uint16{
 	4, 24, 9, 24, 4, 25, 9, 25, 4, 26, 9, 26, 4, 27, 9, 27, 4, 28, 9, 28, 3,
 	2, 3, 2, 3, 2, 3, 3, 3, 3, 3, 3, 3, 4, 3, 4, 7, 4, 65, 10, 4, 12, 4, 14,
 	4, 68, 11, 4, 3, 4, 3, 4, 3, 5, 5, 5, 73, 10, 5, 3, 5, 3, 5, 3, 5, 3, 6,
-	3, 6, 7, 6, 80, 10, 6, 12, 6, 14, 6, 83, 11, 6, 3, 7, 3, 7, 3, 7, 7, 7,
-	88, 10, 7, 12, 7, 14, 7, 91, 11, 7, 3, 8, 3, 8, 3, 9, 3, 9, 3, 9, 3, 10,
-	3, 10, 3, 11, 3, 11, 3, 12, 3, 12, 3, 13, 3, 13, 3, 13, 3, 14, 3, 14, 3,
-	14, 3, 14, 3, 15, 3, 15, 3, 15, 3, 16, 3, 16, 3, 17, 3, 17, 3, 17, 3, 18,
-	3, 18, 3, 18, 3, 19, 3, 19, 3, 19, 3, 19, 3, 19, 3, 19, 5, 19, 128, 10,
-	19, 3, 20, 3, 20, 5, 20, 132, 10, 20, 3, 21, 3, 21, 3, 21, 3, 21, 3, 22,
-	3, 22, 3, 22, 3, 22, 7, 22, 142, 10, 22, 12, 22, 14, 22, 145, 11, 22, 3,
-	22, 5, 22, 148, 10, 22, 3, 22, 3, 22, 3, 23, 3, 23, 3, 23, 3, 23, 3, 23,
-	3, 24, 3, 24, 3, 24, 7, 24, 160, 10, 24, 12, 24, 14, 24, 163, 11, 24, 3,
-	24, 5, 24, 166, 10, 24, 3, 25, 3, 25, 3, 26, 3, 26, 3, 26, 3, 26, 5, 26,
-	174, 10, 26, 3, 27, 3, 27, 3, 28, 3, 28, 3, 28, 2, 2, 29, 2, 4, 6, 8, 10,
-	12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46,
-	48, 50, 52, 54, 2, 4, 5, 2, 3, 3, 5, 5, 8, 8, 3, 2, 16, 18, 2, 168, 2,
-	56, 3, 2, 2, 2, 4, 59, 3, 2, 2, 2, 6, 62, 3, 2, 2, 2, 8, 72, 3, 2, 2, 2,
-	10, 77, 3, 2, 2, 2, 12, 84, 3, 2, 2, 2, 14, 92, 3, 2, 2, 2, 16, 94, 3,
-	2, 2, 2, 18, 97, 3, 2, 2, 2, 20, 99, 3, 2, 2, 2, 22, 101, 3, 2, 2, 2, 24,
-	103, 3, 2, 2, 2, 26, 106, 3, 2, 2, 2, 28, 110, 3, 2, 2, 2, 30, 113, 3,
-	2, 2, 2, 32, 115, 3, 2, 2, 2, 34, 118, 3, 2, 2, 2, 36, 127, 3, 2, 2, 2,
-	38, 131, 3, 2, 2, 2, 40, 133, 3, 2, 2, 2, 42, 137, 3, 2, 2, 2, 44, 151,
-	3, 2, 2, 2, 46, 156, 3, 2, 2, 2, 48, 167, 3, 2, 2, 2, 50, 173, 3, 2, 2,
-	2, 52, 175, 3, 2, 2, 2, 54, 177, 3, 2, 2, 2, 56, 57, 5, 4, 3, 2, 57, 58,
-	7, 2, 2, 3, 58, 3, 3, 2, 2, 2, 59, 60, 5, 6, 4, 2, 60, 61, 5, 8, 5, 2,
-	61, 5, 3, 2, 2, 2, 62, 66, 7, 4, 2, 2, 63, 65, 5, 36, 19, 2, 64, 63, 3,
-	2, 2, 2, 65, 68, 3, 2, 2, 2, 66, 64, 3, 2, 2, 2, 66, 67, 3, 2, 2, 2, 67,
-	69, 3, 2, 2, 2, 68, 66, 3, 2, 2, 2, 69, 70, 7, 26, 2, 2, 70, 7, 3, 2, 2,
-	2, 71, 73, 5, 10, 6, 2, 72, 71, 3, 2, 2, 2, 72, 73, 3, 2, 2, 2, 73, 74,
-	3, 2, 2, 2, 74, 75, 5, 12, 7, 2, 75, 76, 7, 6, 2, 2, 76, 9, 3, 2, 2, 2,
-	77, 81, 7, 10, 2, 2, 78, 80, 7, 10, 2, 2, 79, 78, 3, 2, 2, 2, 80, 83, 3,
-	2, 2, 2, 81, 79, 3, 2, 2, 2, 81, 82, 3, 2, 2, 2, 82, 11, 3, 2, 2, 2, 83,
-	81, 3, 2, 2, 2, 84, 89, 5, 14, 8, 2, 85, 88, 5, 16, 9, 2, 86, 88, 5, 14,
-	8, 2, 87, 85, 3, 2, 2, 2, 87, 86, 3, 2, 2, 2, 88, 91, 3, 2, 2, 2, 89, 87,
-	3, 2, 2, 2, 89, 90, 3, 2, 2, 2, 90, 13, 3, 2, 2, 2, 91, 89, 3, 2, 2, 2,
-	92, 93, 9, 2, 2, 2, 93, 15, 3, 2, 2, 2, 94, 95, 7, 9, 2, 2, 95, 96, 5,
-	18, 10, 2, 96, 17, 3, 2, 2, 2, 97, 98, 7, 3, 2, 2, 98, 19, 3, 2, 2, 2,
-	99, 100, 7, 3, 2, 2, 100, 21, 3, 2, 2, 2, 101, 102, 7, 3, 2, 2, 102, 23,
-	3, 2, 2, 2, 103, 104, 7, 13, 2, 2, 104, 105, 5, 52, 27, 2, 105, 25, 3,
-	2, 2, 2, 106, 107, 7, 14, 2, 2, 107, 108, 5, 54, 28, 2, 108, 109, 5, 38,
-	20, 2, 109, 27, 3, 2, 2, 2, 110, 111, 7, 15, 2, 2, 111, 112, 5, 22, 12,
-	2, 112, 29, 3, 2, 2, 2, 113, 114, 9, 3, 2, 2, 114, 31, 3, 2, 2, 2, 115,
-	116, 7, 19, 2, 2, 116, 117, 5, 46, 24, 2, 117, 33, 3, 2, 2, 2, 118, 119,
-	7, 20, 2, 2, 119, 120, 5, 20, 11, 2, 120, 35, 3, 2, 2, 2, 121, 128, 5,
-	24, 13, 2, 122, 128, 5, 26, 14, 2, 123, 128, 5, 28, 15, 2, 124, 128, 5,
-	30, 16, 2, 125, 128, 5, 32, 17, 2, 126, 128, 5, 34, 18, 2, 127, 121, 3,
-	2, 2, 2, 127, 122, 3, 2, 2, 2, 127, 123, 3, 2, 2, 2, 127, 124, 3, 2, 2,
-	2, 127, 125, 3, 2, 2, 2, 127, 126, 3, 2, 2, 2, 128, 37, 3, 2, 2, 2, 129,
-	132, 5, 40, 21, 2, 130, 132, 5, 44, 23, 2, 131, 129, 3, 2, 2, 2, 131, 130,
-	3, 2, 2, 2, 132, 39, 3, 2, 2, 2, 133, 134, 7, 21, 2, 2, 134, 135, 7, 12,
-	2, 2, 135, 136, 7, 22, 2, 2, 136, 41, 3, 2, 2, 2, 137, 138, 7, 21, 2, 2,
-	138, 143, 5, 48, 25, 2, 139, 140, 7, 24, 2, 2, 140, 142, 5, 48, 25, 2,
-	141, 139, 3, 2, 2, 2, 142, 145, 3, 2, 2, 2, 143, 141, 3, 2, 2, 2, 143,
-	144, 3, 2, 2, 2, 144, 147, 3, 2, 2, 2, 145, 143, 3, 2, 2, 2, 146, 148,
-	7, 24, 2, 2, 147, 146, 3, 2, 2, 2, 147, 148, 3, 2, 2, 2, 148, 149, 3, 2,
-	2, 2, 149, 150, 7, 22, 2, 2, 150, 43, 3, 2, 2, 2, 151, 152, 7, 21, 2, 2,
-	152, 153, 5, 42, 22, 2, 153, 154, 7, 12, 2, 2, 154, 155, 7, 22, 2, 2, 155,
-	45, 3, 2, 2, 2, 156, 161, 5, 50, 26, 2, 157, 158, 7, 24, 2, 2, 158, 160,
-	5, 50, 26, 2, 159, 157, 3, 2, 2, 2, 160, 163, 3, 2, 2, 2, 161, 159, 3,
-	2, 2, 2, 161, 162, 3, 2, 2, 2, 162, 165, 3, 2, 2, 2, 163, 161, 3, 2, 2,
-	2, 164, 166, 7, 24, 2, 2, 165, 164, 3, 2, 2, 2, 165, 166, 3, 2, 2, 2, 166,
-	47, 3, 2, 2, 2, 167, 168, 7, 3, 2, 2, 168, 49, 3, 2, 2, 2, 169, 174, 7,
-	3, 2, 2, 170, 171, 7, 3, 2, 2, 171, 172, 7, 23, 2, 2, 172, 174, 7, 3, 2,
-	2, 173, 169, 3, 2, 2, 2, 173, 170, 3, 2, 2, 2, 174, 51, 3, 2, 2, 2, 175,
-	176, 7, 3, 2, 2, 176, 53, 3, 2, 2, 2, 177, 178, 7, 3, 2, 2, 178, 55, 3,
-	2, 2, 2, 14, 66, 72, 81, 87, 89, 127, 131, 143, 147, 161, 165, 173,
+	3, 6, 7, 6, 80, 10, 6, 12, 6, 14, 6, 83, 11, 6, 3, 7, 3, 7, 3, 7, 3, 7,
+	7, 7, 89, 10, 7, 12, 7, 14, 7, 92, 11, 7, 3, 8, 3, 8, 3, 9, 3, 9, 3, 9,
+	3, 10, 3, 10, 3, 11, 3, 11, 3, 12, 3, 12, 3, 13, 3, 13, 3, 13, 3, 14, 3,
+	14, 3, 14, 3, 14, 3, 15, 3, 15, 3, 15, 3, 16, 3, 16, 3, 17, 3, 17, 3, 17,
+	3, 18, 3, 18, 3, 18, 3, 19, 3, 19, 3, 19, 3, 19, 3, 19, 3, 19, 5, 19, 129,
+	10, 19, 3, 20, 3, 20, 5, 20, 133, 10, 20, 3, 21, 3, 21, 3, 21, 3, 21, 3,
+	22, 3, 22, 3, 22, 3, 22, 7, 22, 143, 10, 22, 12, 22, 14, 22, 146, 11, 22,
+	3, 22, 5, 22, 149, 10, 22, 3, 22, 3, 22, 3, 23, 3, 23, 3, 23, 3, 23, 3,
+	23, 3, 24, 3, 24, 3, 24, 7, 24, 161, 10, 24, 12, 24, 14, 24, 164, 11, 24,
+	3, 24, 5, 24, 167, 10, 24, 3, 25, 3, 25, 3, 26, 3, 26, 3, 26, 3, 26, 5,
+	26, 175, 10, 26, 3, 27, 3, 27, 3, 28, 3, 28, 3, 28, 2, 2, 29, 2, 4, 6,
+	8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42,
+	44, 46, 48, 50, 52, 54, 2, 4, 5, 2, 3, 3, 5, 5, 8, 8, 3, 2, 16, 18, 2,
+	170, 2, 56, 3, 2, 2, 2, 4, 59, 3, 2, 2, 2, 6, 62, 3, 2, 2, 2, 8, 72, 3,
+	2, 2, 2, 10, 77, 3, 2, 2, 2, 12, 84, 3, 2, 2, 2, 14, 93, 3, 2, 2, 2, 16,
+	95, 3, 2, 2, 2, 18, 98, 3, 2, 2, 2, 20, 100, 3, 2, 2, 2, 22, 102, 3, 2,
+	2, 2, 24, 104, 3, 2, 2, 2, 26, 107, 3, 2, 2, 2, 28, 111, 3, 2, 2, 2, 30,
+	114, 3, 2, 2, 2, 32, 116, 3, 2, 2, 2, 34, 119, 3, 2, 2, 2, 36, 128, 3,
+	2, 2, 2, 38, 132, 3, 2, 2, 2, 40, 134, 3, 2, 2, 2, 42, 138, 3, 2, 2, 2,
+	44, 152, 3, 2, 2, 2, 46, 157, 3, 2, 2, 2, 48, 168, 3, 2, 2, 2, 50, 174,
+	3, 2, 2, 2, 52, 176, 3, 2, 2, 2, 54, 178, 3, 2, 2, 2, 56, 57, 5, 4, 3,
+	2, 57, 58, 7, 2, 2, 3, 58, 3, 3, 2, 2, 2, 59, 60, 5, 6, 4, 2, 60, 61, 5,
+	8, 5, 2, 61, 5, 3, 2, 2, 2, 62, 66, 7, 4, 2, 2, 63, 65, 5, 36, 19, 2, 64,
+	63, 3, 2, 2, 2, 65, 68, 3, 2, 2, 2, 66, 64, 3, 2, 2, 2, 66, 67, 3, 2, 2,
+	2, 67, 69, 3, 2, 2, 2, 68, 66, 3, 2, 2, 2, 69, 70, 7, 26, 2, 2, 70, 7,
+	3, 2, 2, 2, 71, 73, 5, 10, 6, 2, 72, 71, 3, 2, 2, 2, 72, 73, 3, 2, 2, 2,
+	73, 74, 3, 2, 2, 2, 74, 75, 5, 12, 7, 2, 75, 76, 7, 6, 2, 2, 76, 9, 3,
+	2, 2, 2, 77, 81, 7, 10, 2, 2, 78, 80, 7, 10, 2, 2, 79, 78, 3, 2, 2, 2,
+	80, 83, 3, 2, 2, 2, 81, 79, 3, 2, 2, 2, 81, 82, 3, 2, 2, 2, 82, 11, 3,
+	2, 2, 2, 83, 81, 3, 2, 2, 2, 84, 90, 5, 14, 8, 2, 85, 89, 5, 16, 9, 2,
+	86, 89, 5, 14, 8, 2, 87, 89, 5, 10, 6, 2, 88, 85, 3, 2, 2, 2, 88, 86, 3,
+	2, 2, 2, 88, 87, 3, 2, 2, 2, 89, 92, 3, 2, 2, 2, 90, 88, 3, 2, 2, 2, 90,
+	91, 3, 2, 2, 2, 91, 13, 3, 2, 2, 2, 92, 90, 3, 2, 2, 2, 93, 94, 9, 2, 2,
+	2, 94, 15, 3, 2, 2, 2, 95, 96, 7, 9, 2, 2, 96, 97, 5, 18, 10, 2, 97, 17,
+	3, 2, 2, 2, 98, 99, 7, 3, 2, 2, 99, 19, 3, 2, 2, 2, 100, 101, 7, 3, 2,
+	2, 101, 21, 3, 2, 2, 2, 102, 103, 7, 3, 2, 2, 103, 23, 3, 2, 2, 2, 104,
+	105, 7, 13, 2, 2, 105, 106, 5, 52, 27, 2, 106, 25, 3, 2, 2, 2, 107, 108,
+	7, 14, 2, 2, 108, 109, 5, 54, 28, 2, 109, 110, 5, 38, 20, 2, 110, 27, 3,
+	2, 2, 2, 111, 112, 7, 15, 2, 2, 112, 113, 5, 22, 12, 2, 113, 29, 3, 2,
+	2, 2, 114, 115, 9, 3, 2, 2, 115, 31, 3, 2, 2, 2, 116, 117, 7, 19, 2, 2,
+	117, 118, 5, 46, 24, 2, 118, 33, 3, 2, 2, 2, 119, 120, 7, 20, 2, 2, 120,
+	121, 5, 20, 11, 2, 121, 35, 3, 2, 2, 2, 122, 129, 5, 24, 13, 2, 123, 129,
+	5, 26, 14, 2, 124, 129, 5, 28, 15, 2, 125, 129, 5, 30, 16, 2, 126, 129,
+	5, 32, 17, 2, 127, 129, 5, 34, 18, 2, 128, 122, 3, 2, 2, 2, 128, 123, 3,
+	2, 2, 2, 128, 124, 3, 2, 2, 2, 128, 125, 3, 2, 2, 2, 128, 126, 3, 2, 2,
+	2, 128, 127, 3, 2, 2, 2, 129, 37, 3, 2, 2, 2, 130, 133, 5, 40, 21, 2, 131,
+	133, 5, 44, 23, 2, 132, 130, 3, 2, 2, 2, 132, 131, 3, 2, 2, 2, 133, 39,
+	3, 2, 2, 2, 134, 135, 7, 21, 2, 2, 135, 136, 7, 12, 2, 2, 136, 137, 7,
+	22, 2, 2, 137, 41, 3, 2, 2, 2, 138, 139, 7, 21, 2, 2, 139, 144, 5, 48,
+	25, 2, 140, 141, 7, 24, 2, 2, 141, 143, 5, 48, 25, 2, 142, 140, 3, 2, 2,
+	2, 143, 146, 3, 2, 2, 2, 144, 142, 3, 2, 2, 2, 144, 145, 3, 2, 2, 2, 145,
+	148, 3, 2, 2, 2, 146, 144, 3, 2, 2, 2, 147, 149, 7, 24, 2, 2, 148, 147,
+	3, 2, 2, 2, 148, 149, 3, 2, 2, 2, 149, 150, 3, 2, 2, 2, 150, 151, 7, 22,
+	2, 2, 151, 43, 3, 2, 2, 2, 152, 153, 7, 21, 2, 2, 153, 154, 5, 42, 22,
+	2, 154, 155, 7, 12, 2, 2, 155, 156, 7, 22, 2, 2, 156, 45, 3, 2, 2, 2, 157,
+	162, 5, 50, 26, 2, 158, 159, 7, 24, 2, 2, 159, 161, 5, 50, 26, 2, 160,
+	158, 3, 2, 2, 2, 161, 164, 3, 2, 2, 2, 162, 160, 3, 2, 2, 2, 162, 163,
+	3, 2, 2, 2, 163, 166, 3, 2, 2, 2, 164, 162, 3, 2, 2, 2, 165, 167, 7, 24,
+	2, 2, 166, 165, 3, 2, 2, 2, 166, 167, 3, 2, 2, 2, 167, 47, 3, 2, 2, 2,
+	168, 169, 7, 3, 2, 2, 169, 49, 3, 2, 2, 2, 170, 175, 7, 3, 2, 2, 171, 172,
+	7, 3, 2, 2, 172, 173, 7, 23, 2, 2, 173, 175, 7, 3, 2, 2, 174, 170, 3, 2,
+	2, 2, 174, 171, 3, 2, 2, 2, 175, 51, 3, 2, 2, 2, 176, 177, 7, 3, 2, 2,
+	177, 53, 3, 2, 2, 2, 178, 179, 7, 3, 2, 2, 179, 55, 3, 2, 2, 2, 14, 66,
+	72, 81, 88, 90, 128, 132, 144, 148, 162, 166, 174,
 }
 var deserializer = antlr.NewATNDeserializer(nil)
 var deserializedATN = deserializer.DeserializeFromUInt16(parserATN)
@@ -746,7 +747,6 @@ func (s *LineCommentContext) ExitRule(listener antlr.ParseTreeListener) {
 func (p *SQLParser) LineComment() (localctx ILineCommentContext) {
 	localctx = NewLineCommentContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 8, SQLParserRULE_lineComment)
-	var _la int
 
 	defer func() {
 		p.ExitRule()
@@ -764,6 +764,8 @@ func (p *SQLParser) LineComment() (localctx ILineCommentContext) {
 		}
 	}()
 
+	var _alt int
+
 	p.EnterOuterAlt(localctx, 1)
 	{
 		p.SetState(75)
@@ -771,17 +773,19 @@ func (p *SQLParser) LineComment() (localctx ILineCommentContext) {
 	}
 	p.SetState(79)
 	p.GetErrorHandler().Sync(p)
-	_la = p.GetTokenStream().LA(1)
+	_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 2, p.GetParserRuleContext())
 
-	for _la == SQLParserLINE_COMMENT {
-		{
-			p.SetState(76)
-			p.Match(SQLParserLINE_COMMENT)
+	for _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
+		if _alt == 1 {
+			{
+				p.SetState(76)
+				p.Match(SQLParserLINE_COMMENT)
+			}
+
 		}
-
 		p.SetState(81)
 		p.GetErrorHandler().Sync(p)
-		_la = p.GetTokenStream().LA(1)
+		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 2, p.GetParserRuleContext())
 	}
 
 	return localctx
@@ -871,6 +875,29 @@ func (s *StatementBodyContext) Param(i int) IParamContext {
 	return t.(IParamContext)
 }
 
+func (s *StatementBodyContext) AllLineComment() []ILineCommentContext {
+	var ts = s.GetTypedRuleContexts(reflect.TypeOf((*ILineCommentContext)(nil)).Elem())
+	var tst = make([]ILineCommentContext, len(ts))
+
+	for i, t := range ts {
+		if t != nil {
+			tst[i] = t.(ILineCommentContext)
+		}
+	}
+
+	return tst
+}
+
+func (s *StatementBodyContext) LineComment(i int) ILineCommentContext {
+	var t = s.GetTypedRuleContext(reflect.TypeOf((*ILineCommentContext)(nil)).Elem(), i)
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(ILineCommentContext)
+}
+
 func (s *StatementBodyContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
@@ -917,12 +944,12 @@ func (p *SQLParser) StatementBody() (localctx IStatementBodyContext) {
 		p.SetState(82)
 		p.Word()
 	}
-	p.SetState(87)
+	p.SetState(88)
 	p.GetErrorHandler().Sync(p)
 	_la = p.GetTokenStream().LA(1)
 
-	for ((_la)&-(0x1f+1)) == 0 && ((1<<uint(_la))&((1<<SQLParserID)|(1<<SQLParserWORD)|(1<<SQLParserSTRING)|(1<<SQLParserPARAM_MARK))) != 0 {
-		p.SetState(85)
+	for ((_la)&-(0x1f+1)) == 0 && ((1<<uint(_la))&((1<<SQLParserID)|(1<<SQLParserWORD)|(1<<SQLParserSTRING)|(1<<SQLParserPARAM_MARK)|(1<<SQLParserLINE_COMMENT))) != 0 {
+		p.SetState(86)
 		p.GetErrorHandler().Sync(p)
 
 		switch p.GetTokenStream().LA(1) {
@@ -938,11 +965,17 @@ func (p *SQLParser) StatementBody() (localctx IStatementBodyContext) {
 				p.Word()
 			}
 
+		case SQLParserLINE_COMMENT:
+			{
+				p.SetState(85)
+				p.LineComment()
+			}
+
 		default:
 			panic(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
 		}
 
-		p.SetState(89)
+		p.SetState(90)
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
 	}
@@ -1043,7 +1076,7 @@ func (p *SQLParser) Word() (localctx IWordContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(90)
+		p.SetState(91)
 		_la = p.GetTokenStream().LA(1)
 
 		if !(((_la)&-(0x1f+1)) == 0 && ((1<<uint(_la))&((1<<SQLParserID)|(1<<SQLParserWORD)|(1<<SQLParserSTRING))) != 0) {
@@ -1151,11 +1184,11 @@ func (p *SQLParser) Param() (localctx IParamContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(92)
+		p.SetState(93)
 		p.Match(SQLParserPARAM_MARK)
 	}
 	{
-		p.SetState(93)
+		p.SetState(94)
 		p.ParamId()
 	}
 
@@ -1246,7 +1279,7 @@ func (p *SQLParser) ParamId() (localctx IParamIdContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(95)
+		p.SetState(96)
 		p.Match(SQLParserID)
 	}
 
@@ -1337,7 +1370,7 @@ func (p *SQLParser) ReturnValueNameId() (localctx IReturnValueNameIdContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(97)
+		p.SetState(98)
 		p.Match(SQLParserID)
 	}
 
@@ -1428,7 +1461,7 @@ func (p *SQLParser) ParamStructNameId() (localctx IParamStructNameIdContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(99)
+		p.SetState(100)
 		p.Match(SQLParserID)
 	}
 
@@ -1529,11 +1562,11 @@ func (p *SQLParser) NameTag() (localctx INameTagContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(101)
+		p.SetState(102)
 		p.Match(SQLParserNAME_TAG)
 	}
 	{
-		p.SetState(102)
+		p.SetState(103)
 		p.QueryName()
 	}
 
@@ -1644,15 +1677,15 @@ func (p *SQLParser) ParamTag() (localctx IParamTagContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(104)
+		p.SetState(105)
 		p.Match(SQLParserTYPE_TAG)
 	}
 	{
-		p.SetState(105)
+		p.SetState(106)
 		p.ParamName()
 	}
 	{
-		p.SetState(106)
+		p.SetState(107)
 		p.TransformRule()
 	}
 
@@ -1753,11 +1786,11 @@ func (p *SQLParser) ParamStructNameTag() (localctx IParamStructNameTagContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(108)
+		p.SetState(109)
 		p.Match(SQLParserPARAM_STRUCT_NAME_TAG)
 	}
 	{
-		p.SetState(109)
+		p.SetState(110)
 		p.ParamStructNameId()
 	}
 
@@ -1857,7 +1890,7 @@ func (p *SQLParser) ModeTag() (localctx IModeTagContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(111)
+		p.SetState(112)
 		_la = p.GetTokenStream().LA(1)
 
 		if !(((_la)&-(0x1f+1)) == 0 && ((1<<uint(_la))&((1<<SQLParserONE_TAG)|(1<<SQLParserMANY_TAG)|(1<<SQLParserEXEC_TAG))) != 0) {
@@ -1965,11 +1998,11 @@ func (p *SQLParser) NotNullParamsTag() (localctx INotNullParamsTagContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(113)
+		p.SetState(114)
 		p.Match(SQLParserNOT_NULL_PARAMS_TAG)
 	}
 	{
-		p.SetState(114)
+		p.SetState(115)
 		p.NotNullTransform()
 	}
 
@@ -2070,11 +2103,11 @@ func (p *SQLParser) ReturnValueName() (localctx IReturnValueNameContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(116)
+		p.SetState(117)
 		p.Match(SQLParserRETURN_VALUE_NAME_TAG)
 	}
 	{
-		p.SetState(117)
+		p.SetState(118)
 		p.ReturnValueNameId()
 	}
 
@@ -2219,49 +2252,49 @@ func (p *SQLParser) AnyTag() (localctx IAnyTagContext) {
 		}
 	}()
 
-	p.SetState(125)
+	p.SetState(126)
 	p.GetErrorHandler().Sync(p)
 
 	switch p.GetTokenStream().LA(1) {
 	case SQLParserNAME_TAG:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(119)
+			p.SetState(120)
 			p.NameTag()
 		}
 
 	case SQLParserTYPE_TAG:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(120)
+			p.SetState(121)
 			p.ParamTag()
 		}
 
 	case SQLParserPARAM_STRUCT_NAME_TAG:
 		p.EnterOuterAlt(localctx, 3)
 		{
-			p.SetState(121)
+			p.SetState(122)
 			p.ParamStructNameTag()
 		}
 
 	case SQLParserONE_TAG, SQLParserMANY_TAG, SQLParserEXEC_TAG:
 		p.EnterOuterAlt(localctx, 4)
 		{
-			p.SetState(122)
+			p.SetState(123)
 			p.ModeTag()
 		}
 
 	case SQLParserNOT_NULL_PARAMS_TAG:
 		p.EnterOuterAlt(localctx, 5)
 		{
-			p.SetState(123)
+			p.SetState(124)
 			p.NotNullParamsTag()
 		}
 
 	case SQLParserRETURN_VALUE_NAME_TAG:
 		p.EnterOuterAlt(localctx, 6)
 		{
-			p.SetState(124)
+			p.SetState(125)
 			p.ReturnValueName()
 		}
 
@@ -2370,20 +2403,20 @@ func (p *SQLParser) TransformRule() (localctx ITransformRuleContext) {
 		}
 	}()
 
-	p.SetState(129)
+	p.SetState(130)
 	p.GetErrorHandler().Sync(p)
 	switch p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 6, p.GetParserRuleContext()) {
 	case 1:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(127)
+			p.SetState(128)
 			p.SpreadTransform()
 		}
 
 	case 2:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(128)
+			p.SetState(129)
 			p.StructSpreadTransform()
 		}
 
@@ -2484,15 +2517,15 @@ func (p *SQLParser) SpreadTransform() (localctx ISpreadTransformContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(131)
+		p.SetState(132)
 		p.Match(SQLParserOB)
 	}
 	{
-		p.SetState(132)
+		p.SetState(133)
 		p.Match(SQLParserSPREAD)
 	}
 	{
-		p.SetState(133)
+		p.SetState(134)
 		p.Match(SQLParserCB)
 	}
 
@@ -2621,46 +2654,46 @@ func (p *SQLParser) StructTransform() (localctx IStructTransformContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(135)
+		p.SetState(136)
 		p.Match(SQLParserOB)
 	}
 	{
-		p.SetState(136)
+		p.SetState(137)
 		p.Key()
 	}
-	p.SetState(141)
+	p.SetState(142)
 	p.GetErrorHandler().Sync(p)
 	_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 7, p.GetParserRuleContext())
 
 	for _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 		if _alt == 1 {
 			{
-				p.SetState(137)
+				p.SetState(138)
 				p.Match(SQLParserCOMMA)
 			}
 			{
-				p.SetState(138)
+				p.SetState(139)
 				p.Key()
 			}
 
 		}
-		p.SetState(143)
+		p.SetState(144)
 		p.GetErrorHandler().Sync(p)
 		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 7, p.GetParserRuleContext())
 	}
-	p.SetState(145)
+	p.SetState(146)
 	p.GetErrorHandler().Sync(p)
 	_la = p.GetTokenStream().LA(1)
 
 	if _la == SQLParserCOMMA {
 		{
-			p.SetState(144)
+			p.SetState(145)
 			p.Match(SQLParserCOMMA)
 		}
 
 	}
 	{
-		p.SetState(147)
+		p.SetState(148)
 		p.Match(SQLParserCB)
 	}
 
@@ -2769,19 +2802,19 @@ func (p *SQLParser) StructSpreadTransform() (localctx IStructSpreadTransformCont
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(149)
+		p.SetState(150)
 		p.Match(SQLParserOB)
 	}
 	{
-		p.SetState(150)
+		p.SetState(151)
 		p.StructTransform()
 	}
 	{
-		p.SetState(151)
+		p.SetState(152)
 		p.Match(SQLParserSPREAD)
 	}
 	{
-		p.SetState(152)
+		p.SetState(153)
 		p.Match(SQLParserCB)
 	}
 
@@ -2902,36 +2935,36 @@ func (p *SQLParser) NotNullTransform() (localctx INotNullTransformContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(154)
+		p.SetState(155)
 		p.NotNullParam()
 	}
-	p.SetState(159)
+	p.SetState(160)
 	p.GetErrorHandler().Sync(p)
 	_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 9, p.GetParserRuleContext())
 
 	for _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 		if _alt == 1 {
 			{
-				p.SetState(155)
+				p.SetState(156)
 				p.Match(SQLParserCOMMA)
 			}
 			{
-				p.SetState(156)
+				p.SetState(157)
 				p.NotNullParam()
 			}
 
 		}
-		p.SetState(161)
+		p.SetState(162)
 		p.GetErrorHandler().Sync(p)
 		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 9, p.GetParserRuleContext())
 	}
-	p.SetState(163)
+	p.SetState(164)
 	p.GetErrorHandler().Sync(p)
 	_la = p.GetTokenStream().LA(1)
 
 	if _la == SQLParserCOMMA {
 		{
-			p.SetState(162)
+			p.SetState(163)
 			p.Match(SQLParserCOMMA)
 		}
 
@@ -3024,7 +3057,7 @@ func (p *SQLParser) Key() (localctx IKeyContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(165)
+		p.SetState(166)
 		p.Match(SQLParserID)
 	}
 
@@ -3121,28 +3154,28 @@ func (p *SQLParser) NotNullParam() (localctx INotNullParamContext) {
 		}
 	}()
 
-	p.SetState(171)
+	p.SetState(172)
 	p.GetErrorHandler().Sync(p)
 	switch p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 11, p.GetParserRuleContext()) {
 	case 1:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(167)
+			p.SetState(168)
 			p.Match(SQLParserID)
 		}
 
 	case 2:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(168)
+			p.SetState(169)
 			p.Match(SQLParserID)
 		}
 		{
-			p.SetState(169)
+			p.SetState(170)
 			p.Match(SQLParserDOT)
 		}
 		{
-			p.SetState(170)
+			p.SetState(171)
 			p.Match(SQLParserID)
 		}
 
@@ -3235,7 +3268,7 @@ func (p *SQLParser) QueryName() (localctx IQueryNameContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(173)
+		p.SetState(174)
 		p.Match(SQLParserID)
 	}
 
@@ -3326,7 +3359,7 @@ func (p *SQLParser) ParamName() (localctx IParamNameContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(175)
+		p.SetState(176)
 		p.Match(SQLParserID)
 	}
 

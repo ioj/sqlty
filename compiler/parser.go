@@ -164,6 +164,12 @@ func (s *parserListener) EnterReturnValueNameId(ctx *parser.ReturnValueNameIdCon
 
 // EnterLineComment is called when production lineComment is entered.
 func (s *parserListener) EnterLineComment(ctx *parser.LineCommentContext) {
+	if s.Query.statement != nil {
+		// Ignore this comment, as it's in the statement body. Only line comments
+		// before the query are treated as docstrings.
+		return
+	}
+
 	for _, c := range strings.Split(ctx.GetText(), "\n") {
 		if len(c) < 2 {
 			continue
