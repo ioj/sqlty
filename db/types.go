@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 
@@ -9,6 +10,8 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/serenize/snaker"
 )
+
+var errVoid = errors.New("pg_catalog.void type")
 
 type pgType struct {
 	// Row identifier
@@ -52,9 +55,26 @@ type pgType struct {
 type pgTypes struct {
 	types map[uint32]*pgType
 	enums map[uint32][]string
+
+	translations map[PGTypeDef]stmt.Type
 }
 
-func newPgTypes(ctx context.Context, db *pgx.Conn) (*pgTypes, error) {
+type PGTypeDef struct {
+	Fullname string `yaml:"name"`
+	NotNull  bool   `yaml:"notNull"`
+}
+
+type PGTypeTranslation struct {
+	Fullname string    `yaml:"name"`
+	NotNull  bool      `yaml:"notNull"`
+	To       stmt.Type `yaml:"to"`
+}
+
+type PGTypeTranslationsFile struct {
+	Types []PGTypeTranslation `yaml:"types"`
+}
+
+func newPgTypes(ctx context.Context, db *pgx.Conn, types []PGTypeTranslation) (*pgTypes, error) {
 	pt := &pgTypes{
 		types: make(map[uint32]*pgType),
 		enums: make(map[uint32][]string),
@@ -129,6 +149,12 @@ func newPgTypes(ctx context.Context, db *pgx.Conn) (*pgTypes, error) {
 		return nil, err
 	}
 
+	pt.translations = make(map[PGTypeDef]stmt.Type)
+	for _, t := range types {
+		ptd := PGTypeDef{Fullname: t.Fullname, NotNull: t.NotNull}
+		pt.translations[ptd] = t.To
+	}
+
 	return pt, nil
 }
 
@@ -169,6 +195,22 @@ func (pt *pgTypes) Type(oid uint32, notnull bool) (*stmt.Type, error) {
 		return nil, fmt.Errorf("no type mapping for OID = %v", oid)
 	}
 
+	t := PGTypeDef{Fullname: pgtype.Fullname(), NotNull: notnull || pgtype.NotNull}
+
+	stmttype, ok := pt.translations[t]
+	if ok {
+		return &stmttype, nil
+	}
+
+	if t.NotNull {
+		// nullable types can deserialize non-nullable ones
+		t2 := PGTypeDef{Fullname: pgtype.Fullname()}
+		stmttype, ok := pt.translations[t2]
+		if ok {
+			return &stmttype, nil
+		}
+	}
+
 	if pgtype.Type == 'e' {
 		goname := pgtype.GolangName()
 		if notnull {
@@ -177,51 +219,9 @@ func (pt *pgTypes) Type(oid uint32, notnull bool) (*stmt.Type, error) {
 		return &stmt.Type{Name: "*" + pgtype.GolangName(), ZeroValue: "new(" + pgtype.GolangName() + ")", Nullable: true}, nil
 	}
 
-	type T struct {
-		fullname string
-		notnull  bool
+	if t.Fullname == "pg_catalog.void" {
+		return nil, errVoid
 	}
 
-	t := T{fullname: pgtype.Fullname(), notnull: notnull || pgtype.NotNull}
-
-	switch t {
-	case T{"pg_catalog.int2", true}:
-		return &stmt.Type{Name: "int", ZeroValue: "0", Nullable: false}, nil
-	case T{"pg_catalog.int2", false}:
-		return &stmt.Type{Name: "*int", ZeroValue: "new(int)", Nullable: true}, nil
-	case T{"pg_catalog.int8", true}:
-		return &stmt.Type{Name: "int", ZeroValue: "0", Nullable: false}, nil
-	case T{"pg_catalog._int8", true}:
-		return &stmt.Type{Name: "pgtype.Int8Array", ZeroValue: "pgtype.Int8Array{}", Nullable: false}, nil
-	case T{"pg_catalog._int8", false}:
-		return &stmt.Type{Name: "pgtype.Int8Array", ZeroValue: "pgtype.Int8Array{}", Nullable: false}, nil
-	case T{"pg_catalog.int8", false}:
-		return &stmt.Type{Name: "*int", ZeroValue: "new(int)", Nullable: true}, nil
-	case T{"pg_catalog.text", true}:
-		return &stmt.Type{Name: "string", ZeroValue: "\"\"", Nullable: false}, nil
-	case T{"pg_catalog.text", false}:
-		return &stmt.Type{Name: "*string", ZeroValue: "new(string)", Nullable: true}, nil
-	case T{"pg_catalog.date", true}:
-		return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
-	case T{"pg_catalog.date", false}:
-		return &stmt.Type{Name: "pgtype.Date", ZeroValue: "pgtype.Date{}", Nullable: false}, nil
-	case T{"pg_catalog.time", true}:
-		return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
-	case T{"pg_catalog.time", false}:
-		return &stmt.Type{Name: "pgtype.Time", ZeroValue: "pgtype.Time{}", Nullable: false}, nil
-	case T{"pg_catalog.timetz", true}:
-		return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
-	case T{"pg_catalog.timetz", false}:
-		return &stmt.Type{Name: "pgtype.Time", ZeroValue: "pgtype.Time{}", Nullable: false}, nil
-	case T{"pg_catalog.timestamp", true}:
-		return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
-	case T{"pg_catalog.timestamp", false}:
-		return &stmt.Type{Name: "pgtype.Timestamp", ZeroValue: "pgtype.Timestamp{}", Nullable: false}, nil
-	case T{"pg_catalog.timestamptz", true}:
-		return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
-	case T{"pg_catalog.timestamptz", false}:
-		return &stmt.Type{Name: "pgtype.Timestamptz", ZeroValue: "pgtype.Timestamptz{}", Nullable: false}, nil
-	}
-
-	return nil, fmt.Errorf("unknown type oid = %v, name = %v, notnull = %v", oid, t.fullname, t.notnull)
+	return nil, fmt.Errorf("unknown type oid = %v, name = %v, notnull = %v", oid, t.Fullname, t.NotNull)
 }

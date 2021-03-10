@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/ioj/sqlty/compiler"
 	"github.com/ioj/sqlty/db"
@@ -16,30 +20,62 @@ import (
 	"github.com/ioj/sqlty/stmt"
 )
 
-func compiledir(connString, dirPath string) error {
-	sqlFiles, err := filepath.Glob(path.Join(dirPath, "*.sql"))
+type Config struct {
+	DBURL        string                 `yaml:"dbUrl"`
+	Dir          string                 `yaml:"dir"`
+	TemplateDir  string                 `yaml:"templateDir"`
+	DefaultTypes string                 `yaml:"defaultTypes"`
+	Types        []db.PGTypeTranslation `yaml:"types"`
+}
+
+func (c *Config) Validate() error {
+	if c.DBURL == "" {
+		return errors.New("dbUrl is required")
+	}
+
+	if c.Dir == "" {
+		c.Dir = "."
+	}
+
+	return nil
+}
+
+func compiledir(cfg *Config) error {
+	sqlFiles, err := filepath.Glob(path.Join(cfg.Dir, "*.sql"))
 	if err != nil {
 		return err
 	}
 
 	if len(sqlFiles) == 0 {
-		return fmt.Errorf("no *.sql files to compile in %v", dirPath)
+		return fmt.Errorf("no *.sql files to compile in %v", cfg.Dir)
 	}
 
+	defaulttypesfile, err := os.Open(cfg.DefaultTypes)
+	if err != nil {
+		return err
+	}
+
+	defaulttypes := &db.PGTypeTranslationsFile{}
+	if err := yaml.NewDecoder(defaulttypesfile).Decode(defaulttypes); err != nil {
+		return err
+	}
+
+	types := append(defaulttypes.Types, cfg.Types...)
+
 	ctx := context.Background()
-	resolver, err := db.NewResolver(ctx, connString)
+	resolver, err := db.NewResolver(ctx, cfg.DBURL, types)
 	if err != nil {
 		return err
 	}
 	defer resolver.Close()
 
-	gen, err := generator.New("./templates/*.go.tpl")
+	gen, err := generator.New(path.Join(cfg.TemplateDir, "*.go.tpl"))
 	if err != nil {
 		return err
 	}
 
 	enums := &stmt.Enums{PackageName: "sql", Enums: resolver.Enums()}
-	if err := gen.Enums(dirPath, enums); err != nil {
+	if err := gen.Enums(cfg.Dir, enums); err != nil {
 		return err
 	}
 
@@ -68,6 +104,11 @@ func compiledir(connString, dirPath string) error {
 			return err
 		}
 
+		if len(returnvals) == 0 && stmtq.ExecMode != stmt.ExecModeExec {
+			fmt.Printf("warn: overriding %v exec mode to @exec\n", stmtq.Name)
+			stmtq.ExecMode = stmt.ExecModeExec
+		}
+
 		fnameOut := strings.TrimSuffix(fname, path.Ext(fname)) + ".gen.go"
 		if err := gen.Query(fnameOut, stmtq); err != nil {
 			return err
@@ -77,27 +118,41 @@ func compiledir(connString, dirPath string) error {
 		generateTime += t4.Sub(t3)
 	}
 
-	t := time.Now()
+	// t := time.Now()
 	goimports := exec.Command("goimports", "-w", ".")
-	goimports.Dir = path.Dir(dirPath)
+	goimports.Dir = path.Dir(cfg.Dir)
 	if output, err := goimports.CombinedOutput(); err != nil {
 		return fmt.Errorf("goimports error: %v, %v", err, string(output))
 	}
-	goimportsTime := time.Now().Sub(t)
 
-	fmt.Printf("Processed files: %d\n", len(sqlFiles))
-	fmt.Printf("Compile time: %.02fs\n", compileTime.Seconds())
-	fmt.Printf("Resolve time: %.02fs\n", resolveTime.Seconds())
-	fmt.Printf("Generate time: %.02fs\n", generateTime.Seconds())
-	fmt.Printf("Goimports time: %.02fs\n", goimportsTime.Seconds())
+	/*
+		goimportsTime := time.Now().Sub(t)
+		fmt.Printf("Processed files: %d\n", len(sqlFiles))
+		fmt.Printf("Compile time: %.02fs\n", compileTime.Seconds())
+		fmt.Printf("Resolve time: %.02fs\n", resolveTime.Seconds())
+		fmt.Printf("Generate time: %.02fs\n", generateTime.Seconds())
+		fmt.Printf("Goimports time: %.02fs\n", goimportsTime.Seconds())
+	*/
 
 	return nil
 }
 
 func main() {
-	connString := "postgres://localhost/stonky"
-	dirPath := "/home/ioj/projects/stonks/database/sql"
-	if err := compiledir(connString, dirPath); err != nil {
+	f, err := os.Open(".sqlty.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cfg := &Config{}
+	if err := yaml.NewDecoder(f).Decode(cfg); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := cfg.Validate(); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := compiledir(cfg); err != nil {
 		log.Fatal(err)
 	}
 }

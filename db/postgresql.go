@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -24,7 +25,7 @@ type pgAttr struct {
 	notnull  bool
 }
 
-func NewResolver(ctx context.Context, connString string) (*Resolver, error) {
+func NewResolver(ctx context.Context, connString string, types []PGTypeTranslation) (*Resolver, error) {
 	var err error
 
 	r := &Resolver{ctx: ctx}
@@ -38,7 +39,7 @@ func NewResolver(ctx context.Context, connString string) (*Resolver, error) {
 		return nil, err
 	}
 
-	r.types, err = newPgTypes(ctx, r.db)
+	r.types, err = newPgTypes(ctx, r.db, types)
 	return r, err
 }
 
@@ -51,18 +52,6 @@ func (r *Resolver) Close() error {
 	}
 
 	return connerr
-}
-
-func (r *Resolver) OIDToType(oid uint32, nullable bool) *stmt.Type {
-	switch oid {
-	case 20: // int8
-		if nullable {
-			return &stmt.Type{Name: "pgtype.Int4", ZeroValue: "&pgtype.Int4", Nullable: true}
-		}
-		return &stmt.Type{Name: "int", ZeroValue: "0", Nullable: false}
-	}
-
-	return nil
 }
 
 func (r *Resolver) Enums() []*stmt.Enum {
@@ -149,7 +138,17 @@ func (r *Resolver) ResolveTypes(ctx context.Context, query string, notnulls []bo
 	for n, f := range res.Fields {
 		p := stmt.Param{Name: string(f.Name)}
 		gotype, err := r.types.Type(f.DataTypeOID, attrs[n].notnull)
-		if err != nil {
+		switch {
+		case err == errVoid:
+			// A special case for functions that return void. As there is no
+			// void type in go, we simply ignore this return type.
+			if len(res.Fields) == 1 {
+				return params, nil, nil
+			}
+
+			// This probably needs to be fixed if it can happen.
+			return nil, nil, errors.New("more than one return value including void. don't know what to do")
+		case err != nil:
 			return nil, nil, err
 		}
 

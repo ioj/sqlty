@@ -11,9 +11,9 @@ const (
 )
 
 type Type struct {
-	Name      string
-	ZeroValue string
-	Nullable  bool
+	Name      string `yaml:"name"`
+	ZeroValue string `yaml:"zeroValue"`
+	Nullable  bool   `yaml:"nullable"`
 }
 
 type Param struct {

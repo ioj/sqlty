@@ -1,0 +1,128 @@
+types:
+  - name: pg_catalog.bool
+    notNull: true
+    to:
+      name: 'bool'
+      zeroValue: 'false'
+      nullable: false
+
+  - name: pg_catalog.bool
+    notNull: false
+    to:
+      name: '*bool'
+      zeroValue: 'new(bool)'
+      nullable: true
+
+  - name: pg_catalog.text
+    notNull: true
+    to:
+      name: 'string'
+      zeroValue: '""'
+      nullable: false
+
+  - name: pg_catalog.text
+    notNull: false
+    to:
+      name: '*string'
+      zeroValue: 'new(string)'
+      nullable: true
+
+  - name: pg_catalog.varchar
+    notNull: true
+    to:
+      name: 'string'
+      zeroValue: '""'
+      nullable: false
+
+  - name: pg_catalog.varchar
+    notNull: false
+    to:
+      name: '*string'
+      zeroValue: 'new(string)'
+      nullable: true
+
+  - name: public.citext
+    notNull: true
+    to:
+      name: 'string'
+      zeroValue: '""'
+      nullable: false
+
+  - name: public.citext
+    notNull: false
+    to:
+      name: '*string'
+      zeroValue: 'new(string)'
+      nullable: true
+
+  - name: pg_catalog.uuid
+    to:
+      name: 'pgtype.UUID'
+      zeroValue: 'pgtype.UUID{}'
+      nullable: false
+# case PGTypeDef{"pg_catalog.bool", true}:
+#   return &stmt.Type{Name: "bool", ZeroValue: "false", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.bool", false}:
+#   return &stmt.Type{Name: "*bool", ZeroValue: "new(bool)", Nullable: true}, nil
+#
+# case PGTypeDef{"pg_catalog.int2", true}:
+#   return &stmt.Type{Name: "int", ZeroValue: "0", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.int2", false}:
+#   return &stmt.Type{Name: "*int", ZeroValue: "new(int)", Nullable: true}, nil
+#
+# case PGTypeDef{"pg_catalog.int4", true}:
+#   return &stmt.Type{Name: "int", ZeroValue: "0", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.int4", false}:
+#   return &stmt.Type{Name: "*int", ZeroValue: "new(int)", Nullable: true}, nil
+# case PGTypeDef{"pg_catalog._int4", true}:
+#   return &stmt.Type{Name: "pgtype.Int4Array", ZeroValue: "pgtype.Int4Array{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog._int4", false}:
+#   return &stmt.Type{Name: "pgtype.Int4Array", ZeroValue: "pgtype.Int4Array{}", Nullable: false}, nil
+#
+# case PGTypeDef{"pg_catalog.int8", true}:
+#   return &stmt.Type{Name: "int", ZeroValue: "0", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.int8", false}:
+#   return &stmt.Type{Name: "*int", ZeroValue: "new(int)", Nullable: true}, nil
+# case PGTypeDef{"pg_catalog._int8", true}:
+#   return &stmt.Type{Name: "pgtype.Int8Array", ZeroValue: "pgtype.Int8Array{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog._int8", false}:
+#   return &stmt.Type{Name: "pgtype.Int8Array", ZeroValue: "pgtype.Int8Array{}", Nullable: false}, nil
+#
+# case PGTypeDef{"pg_catalog.float8", true}:
+#   return &stmt.Type{Name: "float64", ZeroValue: "0.0", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.float8", false}:
+#   return &stmt.Type{Name: "*float64", ZeroValue: "new(float64)", Nullable: true}, nil
+# case PGTypeDef{"pg_catalog._float8", true}:
+#   return &stmt.Type{Name: "pgtype.Float8Array", ZeroValue: "pgtype.Int8Array{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog._float8", false}:
+#   return &stmt.Type{Name: "pgtype.Float8Array", ZeroValue: "pgtype.Int8Array{}", Nullable: false}, nil
+#
+# case PGTypeDef{"pg_catalog.numeric", true}:
+#   return &stmt.Type{Name: "pgtype.Numeric", ZeroValue: "pgtype.Numeric{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.numeric", false}:
+#   return &stmt.Type{Name: "pgtype.Numeric", ZeroValue: "pgtype.Numeric{}", Nullable: false}, nil
+#
+# case PGTypeDef{"pg_catalog.text", true}:
+#   return &stmt.Type{Name: "string", ZeroValue: "\"\"", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.text", false}:
+#   return &stmt.Type{Name: "*string", ZeroValue: "new(string)", Nullable: true}, nil
+# case PGTypeDef{"pg_catalog.date", true}:
+#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.date", false}:
+#   return &stmt.Type{Name: "pgtype.Date", ZeroValue: "pgtype.Date{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.time", true}:
+#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.time", false}:
+#   return &stmt.Type{Name: "pgtype.Time", ZeroValue: "pgtype.Time{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.timetz", true}:
+#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.timetz", false}:
+#   return &stmt.Type{Name: "pgtype.Time", ZeroValue: "pgtype.Time{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.timestamp", true}:
+#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.timestamp", false}:
+#   return &stmt.Type{Name: "pgtype.Timestamp", ZeroValue: "pgtype.Timestamp{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.timestamptz", true}:
+#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.timestamptz", false}:
+#   return &stmt.Type{Name: "pgtype.Timestamptz", ZeroValue: "pgtype.Timestamptz{}", Nullable: false}, nil
