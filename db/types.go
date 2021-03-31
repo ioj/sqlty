@@ -6,12 +6,16 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/ioj/sqlty/helpers"
 	"github.com/ioj/sqlty/stmt"
 	"github.com/jackc/pgx/v4"
 	"github.com/serenize/snaker"
 )
 
-var errVoid = errors.New("pg_catalog.void type")
+var (
+	errVoid      = errors.New("pg_catalog.void type")
+	errComposite = errors.New("composite type")
+)
 
 type pgType struct {
 	// Row identifier
@@ -47,12 +51,24 @@ type pgType struct {
 	// this one is based on. Zero if this type is not a domain.
 	BaseType uint32
 
+	// If this is a composite type, RelID is a pg_attribute reference
+	// for fields list
+	RelID uint32
+
 	// If UniqueName is true, there are no other types with the same name,
 	// but different namespace.
 	UniqueName bool
+
+	// Used is true for composite types that are required for generated queries.
+	Used bool
+
+	// List of underlying OIDs for composite types.
+	Fields []uint32
 }
 
 type pgTypes struct {
+	db *pgx.Conn
+
 	types map[uint32]*pgType
 	enums map[uint32][]string
 
@@ -76,6 +92,7 @@ type PGTypeTranslationsFile struct {
 
 func newPgTypes(ctx context.Context, db *pgx.Conn, types []PGTypeTranslation) (*pgTypes, error) {
 	pt := &pgTypes{
+		db:    db,
 		types: make(map[uint32]*pgType),
 		enums: make(map[uint32][]string),
 	}
@@ -85,7 +102,7 @@ func newPgTypes(ctx context.Context, db *pgx.Conn, types []PGTypeTranslation) (*
 	rows, err := db.Query(ctx, `
 		SELECT
 			t.oid, n.nspname, t.typname, t.typtype, t.typcategory,
-			t.typelem, t.typnotnull, t.typbasetype
+			t.typelem, t.typnotnull, t.typbasetype, t.typrelid
 		FROM pg_type t
 		LEFT JOIN pg_namespace n ON n.oid = t.typnamespace
 	`)
@@ -99,11 +116,18 @@ func newPgTypes(ctx context.Context, db *pgx.Conn, types []PGTypeTranslation) (*
 	for rows.Next() {
 		t := &pgType{UniqueName: true}
 		if err := rows.Scan(&t.OID, &t.Namespace, &t.Name, &t.Type,
-			&t.Category, &t.Elem, &t.NotNull, &t.BaseType); err != nil {
+			&t.Category, &t.Elem, &t.NotNull, &t.BaseType, &t.RelID); err != nil {
 			return nil, err
 		}
 
 		n := snaker.SnakeToCamel(t.Name)
+
+		// PostgreSQL defines type names of arrays of type as _typename.
+		// SnakeToCamel removes the underscore prefix. Let's prevent that.
+		if t.Name[0] == '_' {
+			n = "_" + n
+		}
+
 		uniqueNames[n] = append(uniqueNames[n], t.OID)
 
 		pt.types[t.OID] = t
@@ -189,6 +213,88 @@ func (pt *pgTypes) Enums() []*stmt.Enum {
 	return enums
 }
 
+func (pt *pgTypes) CompositeTypes(ctx context.Context) ([]*stmt.Struct, error) {
+	var types []*stmt.Struct
+
+	for _, t := range pt.types {
+		if t.Type != 'c' {
+			continue
+		}
+
+		if !t.Used {
+			continue
+		}
+
+		composite, err := pt.CompositeFields(ctx, t.OID)
+		if err != nil {
+			return nil, err
+		}
+
+		types = append(types, composite)
+	}
+
+	sort.Slice(types, func(i, j int) bool {
+		return types[i].Name < types[j].Name
+	})
+
+	return types, nil
+}
+
+func (pt *pgTypes) CompositeFields(ctx context.Context, oid uint32) (*stmt.Struct, error) {
+	pgtype, ok := pt.types[oid]
+	if !ok {
+		return nil, fmt.Errorf("no type mapping for OID = %v", oid)
+	}
+
+	if pgtype.Type != 'c' {
+		return nil, fmt.Errorf("not a composite type: %v", pgtype.Type)
+	}
+
+	if pgtype.RelID == 0 {
+		return nil, fmt.Errorf("composite type with relid = 0 (%v)", oid)
+	}
+
+	pt.types[oid].Used = true
+
+	// DontRender is true, because composite types are rendered in a separate file.
+	s := &stmt.Struct{Name: pgtype.GolangName(), DontRender: true}
+
+	rows, err := pt.db.Query(ctx, `
+		SELECT atttypid, attname, attnotnull
+		FROM pg_attribute
+		WHERE attrelid = $1
+		ORDER BY attnum`, pgtype.RelID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	normalizer := helpers.NewStructFieldNormalizer()
+	for rows.Next() {
+		var oid uint32
+		var name string
+		var notnull bool
+
+		if err := rows.Scan(&oid, &name, &notnull); err != nil {
+			return nil, err
+		}
+
+		gotype, err := pt.Type(oid, notnull)
+		if err != nil {
+			return nil, err
+		}
+
+		nname, err := normalizer.Add(name, false)
+		if err != nil {
+			return nil, err
+		}
+
+		s.Params = append(s.Params, stmt.Param{Name: nname, Type: *gotype})
+	}
+
+	return s, nil
+}
+
 func (pt *pgTypes) Type(oid uint32, notnull bool) (*stmt.Type, error) {
 	pgtype, ok := pt.types[oid]
 	if !ok {
@@ -221,6 +327,10 @@ func (pt *pgTypes) Type(oid uint32, notnull bool) (*stmt.Type, error) {
 
 	if t.Fullname == "pg_catalog.void" {
 		return nil, errVoid
+	}
+
+	if pgtype.Type == 'c' {
+		return nil, errComposite
 	}
 
 	return nil, fmt.Errorf("unknown type oid = %v, name = %v, notnull = %v", oid, t.Fullname, t.NotNull)

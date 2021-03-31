@@ -1,4 +1,4 @@
-package compiler
+package helpers
 
 import (
 	"fmt"
@@ -14,12 +14,12 @@ import (
 // https://golang.org/ref/spec#Identifiers
 var identFix = regexp.MustCompile(`[^\pL\pN_]`)
 
-type structNameNorm struct {
+type StructFieldNormalizer struct {
 	keys map[string][]string
 }
 
-func newStructNameNorm() *structNameNorm {
-	return &structNameNorm{keys: make(map[string][]string)}
+func NewStructFieldNormalizer() *StructFieldNormalizer {
+	return &StructFieldNormalizer{keys: make(map[string][]string)}
 }
 
 // Add returns a normalized (snake->camel) orig or error, if the
@@ -27,7 +27,7 @@ func newStructNameNorm() *structNameNorm {
 //
 // If private is true, keys are being normalized to camel case
 // with the first letter being lower-cased
-func (snn *structNameNorm) Add(orig string, private bool) (string, error) {
+func (snn *StructFieldNormalizer) Add(orig string, private bool) (string, error) {
 	normalized := identFix.ReplaceAllString(orig, "_")
 	normalized = snaker.SnakeToCamel(normalized)
 	if len(normalized) == 0 {

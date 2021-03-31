@@ -32,7 +32,7 @@ package {{.PackageName}}
 {{ end }}
 
 {{- /* Render return struct */ -}}
-{{ if .Returns.ShouldRender }}
+{{ if not .Returns.DontRender }}
   type {{ .Returns.Name }} struct {
     {{ range .Returns.Params }}
       {{ .Name }} {{ .Type.Name -}}
@@ -228,7 +228,7 @@ func (db *DB) {{ .Name }}(ctx context.Context
       sqltyResult := {{ $returnZeroValue }}
       err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(&sqltyResult)
     {{ else -}}
-      sqltyResult := &{{ .Name }}Row{}
+      sqltyResult := &{{ .Returns.Name }}{}
       err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(
         {{- range .Returns.Params -}}
           &sqltyResult.{{ .Name }},

@@ -117,3 +117,23 @@ func (g *Generator) Enums(pkgpath string, enums *stmt.Enums) error {
 
 	return f.Close()
 }
+
+func (g *Generator) CompositeTypes(pkgpath string, types *stmt.CompositeTypes) error {
+	fname := path.Join(pkgpath, "composite_types.sqlty.gen.go")
+	if types == nil || len(types.Types) == 0 {
+		// Remove the file if there are no custom enums
+		os.Remove(fname)
+		return nil
+	}
+
+	f, err := os.Create(fname)
+	if err != nil {
+		return err
+	}
+
+	if err := g.tmpl.Lookup("composite_types.go.tpl").Execute(f, types); err != nil {
+		return err
+	}
+
+	return f.Close()
+}

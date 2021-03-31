@@ -16,29 +16,6 @@ type Type struct {
 	Nullable  bool   `yaml:"nullable"`
 }
 
-type Param struct {
-	Name string
-	Type Type
-}
-
-type Struct struct {
-	Name   string
-	Params []Param
-
-	// Struct may be rendered in other files if they're used in more than one place.
-	ShouldRender bool
-}
-
-type Params struct {
-	// If name is not empty, all params are going to be enclosed in a struct instead
-	// of passed directly to the query function.
-	Name string
-
-	Scalar       []Param
-	Spread       []Param
-	StructSpread []Struct
-}
-
 type Query struct {
 	PackageName string
 
@@ -48,10 +25,6 @@ type Query struct {
 	Comments  []string
 	Params    Params
 	Returns   Struct
-}
-
-func (p *Params) None() bool {
-	return len(p.Scalar)+len(p.Spread)+len(p.StructSpread) == 0
 }
 
 func (sd *Query) Validate() error {

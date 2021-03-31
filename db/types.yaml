@@ -60,6 +60,86 @@ types:
       name: 'pgtype.UUID'
       zeroValue: 'pgtype.UUID{}'
       nullable: false
+
+  - name: pg_catalog.date
+    notNull: true
+    to:
+      name: time.Time
+      zeroValue: 'time.Time{}'
+      nullable: false
+
+  - name: pg_catalog.date
+    to:
+      name: pgtype.Date
+      zeroValue: 'pgtype.Date{}'
+      nullable: false
+
+  - name: pg_catalog.int4
+    notNull: true
+    to:
+      name: int
+      zeroValue: '0'
+      nullable: false
+
+  - name: pg_catalog.int4
+    to:
+      name: '*int'
+      zeroValue: 'new(int)'
+      nullable: true
+
+  - name: pg_catalog.int8
+    notNull: true
+    to:
+      name: int
+      zeroValue: '0'
+      nullable: false
+
+  - name: pg_catalog.int8
+    to:
+      name: '*int'
+      zeroValue: 'new(int)'
+      nullable: true
+
+  - name: pg_catalog.float8
+    notNull: true
+    to:
+      name: 'float64'
+      zeroValue: '0.0'
+      nullable: false
+
+  - name: pg_catalog.float8
+    to:
+      name: '*float64'
+      zeroValue: 'new(float64)'
+      nullable: true
+
+  - name: pg_catalog.timestamp
+    notNull: true
+    to:
+      name: 'time.Time'
+      zeroValue: 'time.Time{}'
+      nullable: false
+
+  - name: pg_catalog.timestamp
+    to:
+      name: 'pgtype.Timestamp'
+      zeroValue: 'pgtype.Timestamp{}'
+      nullable: false
+
+  - name: pg_catalog.numeric
+    to:
+      name: 'pgtype.Numeric'
+      zeroValue: 'pgtype.Numeric{}'
+      nullable: false
+# case PGTypeDef{"pg_catalog.timestamp", true}:
+#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.timestamp", false}:
+#   return &stmt.Type{Name: "pgtype.Timestamp", ZeroValue: "pgtype.Timestamp{}", Nullable: false}, nil
+# case PGTypeDef{"pg_catalog.timestamptz", true}:
+#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
+#
+# case PGTypeDef{"pg_catalog.timestamptz", false}:
+#   return &stmt.Type{Name: "pgtype.Timestamptz", ZeroValue: "pgtype.Timestamptz{}", Nullable: false}, nil
 # case PGTypeDef{"pg_catalog.bool", true}:
 #   return &stmt.Type{Name: "bool", ZeroValue: "false", Nullable: false}, nil
 # case PGTypeDef{"pg_catalog.bool", false}:
@@ -118,11 +198,3 @@ types:
 #   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
 # case PGTypeDef{"pg_catalog.timetz", false}:
 #   return &stmt.Type{Name: "pgtype.Time", ZeroValue: "pgtype.Time{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.timestamp", true}:
-#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.timestamp", false}:
-#   return &stmt.Type{Name: "pgtype.Timestamp", ZeroValue: "pgtype.Timestamp{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.timestamptz", true}:
-#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.timestamptz", false}:
-#   return &stmt.Type{Name: "pgtype.Timestamptz", ZeroValue: "pgtype.Timestamptz{}", Nullable: false}, nil

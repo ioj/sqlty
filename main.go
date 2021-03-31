@@ -91,20 +91,20 @@ func compiledir(cfg *Config) error {
 		t2 := time.Now()
 		compileTime += t2.Sub(t1)
 
-		params, returnvals, err := resolver.ResolveTypes(ctx, q.PreparedQuery(), q.NotNullArray())
+		params, returns, err := resolver.ResolveTypes(ctx, q.PreparedQuery(), q.NotNullArray())
 		if err != nil {
-			return err
+			return fmt.Errorf("%v: %v", fname, err.Error())
 		}
 
 		t3 := time.Now()
 		resolveTime += t3.Sub(t2)
 
-		stmtq, err := q.StmtQuery("sql", params, returnvals)
+		stmtq, err := q.StmtQuery("sql", params, returns)
 		if err != nil {
 			return err
 		}
 
-		if len(returnvals) == 0 && stmtq.ExecMode != stmt.ExecModeExec {
+		if (returns == nil || len(returns.Params) == 0) && stmtq.ExecMode != stmt.ExecModeExec {
 			fmt.Printf("warn: overriding %v exec mode to @exec\n", stmtq.Name)
 			stmtq.ExecMode = stmt.ExecModeExec
 		}
@@ -116,6 +116,16 @@ func compiledir(cfg *Config) error {
 
 		t4 := time.Now()
 		generateTime += t4.Sub(t3)
+	}
+
+	ct, err := resolver.CompositeTypes(ctx)
+	if err != nil {
+		return err
+	}
+
+	compositeTypes := &stmt.CompositeTypes{PackageName: "sql", Types: ct}
+	if err := gen.CompositeTypes(cfg.Dir, compositeTypes); err != nil {
+		return err
 	}
 
 	// t := time.Now()

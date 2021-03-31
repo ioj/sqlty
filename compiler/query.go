@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/antlr/antlr4/runtime/Go/antlr"
+	"github.com/ioj/sqlty/helpers"
 	"github.com/ioj/sqlty/stmt"
 	"github.com/serenize/snaker"
 )
@@ -304,7 +305,7 @@ func (q *Query) PreparedQuery() string {
 
 // StmtQuery returns a stmt.Query based on internal values and type resolutions for arguments
 // and return values provided in parameters.
-func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns []stmt.Param) (*stmt.Query, error) {
+func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns *stmt.Struct) (*stmt.Query, error) {
 	stmtq := &stmt.Query{
 		PackageName: packageName,
 		Statement:   q.Statement(),
@@ -358,7 +359,7 @@ func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns []stmt
 	}
 
 	ptypeidx := 0
-	pnames := newStructNameNorm()
+	pnames := helpers.NewStructFieldNormalizer()
 	for _, p := range q.Params(Scalar) {
 		normalized, err := pnames.Add(p.definition.Value, private)
 		if err != nil {
@@ -391,8 +392,8 @@ func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns []stmt
 			return nil, err
 		}
 
-		s := stmt.Struct{Name: normalized, ShouldRender: true}
-		structkeynames := newStructNameNorm()
+		s := stmt.Struct{Name: normalized, DontRender: true}
+		structkeynames := helpers.NewStructFieldNormalizer()
 		for _, sp := range p.Keys() {
 			normalizedkey, err := structkeynames.Add(sp.Name(), false)
 			if err != nil {
@@ -410,25 +411,20 @@ func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns []stmt
 
 	// Handle return value: normalize return value struct name, struct fields,
 	// make sure that there are no duplicate struct field names.
-	var returnValueName string
+	if returns != nil {
+		stmtq.Returns = *returns
+	}
+
 	if q.returnValueName != nil {
-		returnValueName = q.returnValueName.Value
-	}
-
-	if returnValueName == "" {
-		returnValueName = stmtq.Name + "Row"
-	}
-
-	stmtq.Returns = stmt.Struct{
-		Name:   snaker.SnakeToCamel(returnValueName),
-		Params: returns,
+		// Override return value name
+		stmtq.Returns.Name = q.returnValueName.Value
 	}
 
 	if stmtq.Returns.Name == "" {
 		stmtq.Returns.Name = stmtq.Name + "Row"
 	}
 
-	retparams := newStructNameNorm()
+	retparams := helpers.NewStructFieldNormalizer()
 	for n, param := range stmtq.Returns.Params {
 		normalized, err := retparams.Add(param.Name, false)
 		if err != nil {
@@ -439,8 +435,8 @@ func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns []stmt
 		stmtq.Returns.Params[n] = param
 	}
 
-	if len(stmtq.Returns.Params) >= 2 {
-		stmtq.Returns.ShouldRender = true
+	if len(stmtq.Returns.Params) < 2 {
+		stmtq.Returns.DontRender = true
 	}
 
 	return stmtq, nil

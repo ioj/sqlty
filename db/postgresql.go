@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -58,6 +57,10 @@ func (r *Resolver) Enums() []*stmt.Enum {
 	return r.types.Enums()
 }
 
+func (r *Resolver) CompositeTypes(ctx context.Context) ([]*stmt.Struct, error) {
+	return r.types.CompositeTypes(ctx)
+}
+
 func (r *Resolver) getNullableAttrs(ctx context.Context, attrs []*pgAttr) error {
 	if len(attrs) == 0 {
 		return nil
@@ -99,7 +102,7 @@ func (r *Resolver) getNullableAttrs(ctx context.Context, attrs []*pgAttr) error 
 	return nil
 }
 
-func (r *Resolver) ResolveTypes(ctx context.Context, query string, notnulls []bool) ([]stmt.Type, []stmt.Param, error) {
+func (r *Resolver) ResolveTypes(ctx context.Context, query string, notnulls []bool) ([]stmt.Type, *stmt.Struct, error) {
 	res, err := r.conn.Prepare(ctx, "", query, nil)
 	if err != nil {
 		return nil, nil, err
@@ -134,27 +137,42 @@ func (r *Resolver) ResolveTypes(ctx context.Context, query string, notnulls []bo
 		return nil, nil, err
 	}
 
-	var returnvals []stmt.Param
-	for n, f := range res.Fields {
-		p := stmt.Param{Name: string(f.Name)}
-		gotype, err := r.types.Type(f.DataTypeOID, attrs[n].notnull)
+	if len(res.Fields) == 1 {
+		// If there's only one return field, there's a possibility that it's one of two supported
+		// edge cases -- a function returning either void or a composite type (e.g. table row).
+		// Handle it here.
+		f := res.Fields[0]
+		gotype, err := r.types.Type(f.DataTypeOID, attrs[0].notnull)
 		switch {
+		case err == nil:
+			// It's just a normal return type.
+			return params, &stmt.Struct{Params: []stmt.Param{{Name: string(f.Name), Type: *gotype}}}, nil
 		case err == errVoid:
-			// A special case for functions that return void. As there is no
-			// void type in go, we simply ignore this return type.
-			if len(res.Fields) == 1 {
-				return params, nil, nil
+			// Query returns void.
+			return params, nil, nil
+		case err == errComposite:
+			// Query returns a composite type.
+			returns, err := r.types.CompositeFields(ctx, f.DataTypeOID)
+			if err != nil {
+				return nil, nil, err
 			}
-
-			// This probably needs to be fixed if it can happen.
-			return nil, nil, errors.New("more than one return value including void. don't know what to do")
+			return params, returns, err
 		case err != nil:
 			return nil, nil, err
 		}
-
-		p.Type = *gotype
-		returnvals = append(returnvals, p)
 	}
 
-	return params, returnvals, nil
+	// For 2+ return fields, iterate through them and build a list of their Go equivalents.
+	returns := &stmt.Struct{}
+	for n, f := range res.Fields {
+		gotype, err := r.types.Type(f.DataTypeOID, attrs[n].notnull)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		p := stmt.Param{Name: string(f.Name), Type: *gotype}
+		returns.Params = append(returns.Params, p)
+	}
+
+	return params, returns, nil
 }
