@@ -257,7 +257,7 @@ func (pt *pgTypes) CompositeFields(ctx context.Context, oid uint32) (*stmt.Struc
 	pt.types[oid].Used = true
 
 	// DontRender is true, because composite types are rendered in a separate file.
-	s := &stmt.Struct{Name: pgtype.GolangName(), DontRender: true}
+	s := &stmt.Struct{Name: pgtype.GolangName(), IsCompositeType: true}
 
 	rows, err := pt.db.Query(ctx, `
 		SELECT atttypid, attname, attnotnull

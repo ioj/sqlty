@@ -61,6 +61,14 @@ var tmplfn = template.FuncMap{
 		normalized = snaker.SnakeToCamel(normalized)
 		return normalized
 	},
+
+	"returnsStruct": func(val *stmt.Query) bool {
+		return (val.Returns.IsCompositeType || len(val.Returns.Params) > 1) && val.ExecMode != stmt.ExecModeExec
+	},
+
+	"returnsInlineStruct": func(val *stmt.Query) bool {
+		return !val.Returns.IsCompositeType && len(val.Returns.Params) > 1 && val.ExecMode != stmt.ExecModeExec
+	},
 }
 
 func New(templatepath string) (*Generator, error) {

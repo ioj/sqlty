@@ -31,19 +31,18 @@ package {{.PackageName}}
   }
 {{ end }}
 
+
 {{- /* Render return struct */ -}}
-{{ if not .Returns.DontRender }}
-  type {{ .Returns.Name }} struct {
-    {{ range .Returns.Params }}
-      {{ .Name }} {{ .Type.Name -}}
-    {{ end }}
-  }
+{{ $returnsInlineStruct := returnsInlineStruct . }}
+{{ if $returnsInlineStruct }}
+  {{ block "struct_declaration" .Returns -}}
+    // Template block for struct declaration is missing
+  {{- end }}
 {{ end }}
 
 {{- /* Render query */ -}}
 
-{{- $returnCols := len .Returns.Params}}
-
+{{- $returnsStruct := returnsStruct . }}
 {{- $returnType := printf "*%v" .Returns.Name }}
 {{- $returnNilValue := "nil" }}
 {{- $returnZeroValue := printf "&%v{}" .Returns.Name }}
@@ -51,13 +50,14 @@ package {{.PackageName}}
 {{- if eq .ExecMode "exec" }}
   {{- $returnType = "pgconn.CommandTag" }}
   {{- $returnZeroValue := "make(pgconn.CommandTag, 0)" }}
-{{- end -}}
-{{- if eq $returnCols 1 -}}
-  {{- $returnType = firstParamTypeName .Returns.Params -}}
-  {{ if eq .ExecMode "one" -}}
-    {{- $returnNilValue = firstParamNilReturnValue .Returns.Params -}}
+{{- else -}}
+  {{- if not $returnsStruct -}}
+    {{- $returnType = firstParamTypeName .Returns.Params -}}
+    {{ if eq .ExecMode "one" -}}
+      {{- $returnNilValue = firstParamNilReturnValue .Returns.Params -}}
+    {{- end -}}
+    {{- $returnZeroValue = firstParamZeroReturnValue .Returns.Params -}}
   {{- end -}}
-  {{- $returnZeroValue = firstParamZeroReturnValue .Returns.Params -}}
 {{- end -}}
 
 {{ range .Comments }}
@@ -112,6 +112,12 @@ func (db *DB) {{ .Name }}(ctx context.Context
     {{ end }}
     // Start building a list of arguments which will be passed to Exec/Query/QueryRow
     sqltyStmtargs := []interface{}{
+      {{ if .Returns.IsCompositeType -}}
+      // For composite return type, use binary format code to correctly scan the result
+      // into a struct.
+      pgx.QueryResultFormats{pgx.BinaryFormatCode},
+      // Query parameters below.
+      {{ end -}}
       {{ range .Params.Scalar -}}
         {{ if $paramsAsStruct }}args.{{ end }}{{ .Name -}},
       {{ end }}
@@ -203,7 +209,7 @@ func (db *DB) {{ .Name }}(ctx context.Context
     var sqltyResults []{{ $returnType }}
     for sqltyRows.Next() {
       sqltyR := {{ $returnZeroValue }}
-      {{ if eq $returnCols 1 }}
+      {{ if not $returnsStruct }}
         if err := sqltyRows.Scan(&sqltyR); err != nil {
           return {{ $returnNilValue }}, err
         }
@@ -224,16 +230,20 @@ func (db *DB) {{ .Name }}(ctx context.Context
   {{- else if eq .ExecMode "one" }}
     {{- /* Exec mode: one */ -}}
 
-    {{- if eq $returnCols 1 -}}
+    {{- if not $returnsStruct -}}
       sqltyResult := {{ $returnZeroValue }}
       err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(&sqltyResult)
     {{ else -}}
       sqltyResult := &{{ .Returns.Name }}{}
-      err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(
-        {{- range .Returns.Params -}}
-          &sqltyResult.{{ .Name }},
-        {{- end -}}
-      )
+      {{ if .Returns.IsCompositeType }}
+        err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(&sqltyResult)
+      {{ else -}}
+        err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(
+          {{- range .Returns.Params -}}
+            &sqltyResult.{{ .Name }},
+          {{- end -}}
+        )
+      {{ end }}
     {{ end -}}
     if err != nil {
       return {{ $returnNilValue }}, err

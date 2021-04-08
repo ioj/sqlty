@@ -7,10 +7,17 @@ package {{.PackageName}}
 */ -}}
 
 {{- range .Types }}
-  type {{ .Name }} struct {
-    {{ range .Params }}
-      {{ .Name }} {{ .Type.Name -}}
-    {{ end }}
-  }
+  {{ if .IsCompositeType }}
+    {{ block "struct_declaration" . -}}
+      // Template block for struct declaration is missing
+    {{- end }}
+  {{ end }}
+{{ end }}
 
+{{- range .Types }}
+  {{ if .IsCompositeType }}
+    {{ block "struct_functions" . -}}
+      // Template block for struct functions is missing
+    {{- end }}
+  {{ end }}
 {{ end }}

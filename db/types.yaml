@@ -126,6 +126,19 @@ types:
       zeroValue: 'pgtype.Timestamp{}'
       nullable: false
 
+  - name: pg_catalog.timestamptz
+    notNull: true
+    to:
+      name: 'time.Time'
+      zeroValue: 'time.Time{}'
+      nullable: false
+
+  - name: pg_catalog.timestamptz
+    to:
+      name: 'pgtype.Timestamp'
+      zeroValue: 'pgtype.Timestamp{}'
+      nullable: false
+
   - name: pg_catalog.numeric
     to:
       name: 'pgtype.Numeric'

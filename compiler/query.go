@@ -392,7 +392,7 @@ func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns *stmt.
 			return nil, err
 		}
 
-		s := stmt.Struct{Name: normalized, DontRender: true}
+		s := stmt.Struct{Name: normalized, IsCompositeType: true}
 		structkeynames := helpers.NewStructFieldNormalizer()
 		for _, sp := range p.Keys() {
 			normalizedkey, err := structkeynames.Add(sp.Name(), false)
@@ -433,10 +433,6 @@ func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns *stmt.
 
 		param.Name = normalized
 		stmtq.Returns.Params[n] = param
-	}
-
-	if len(stmtq.Returns.Params) < 2 {
-		stmtq.Returns.DontRender = true
 	}
 
 	return stmtq, nil

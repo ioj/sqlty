@@ -8,7 +8,7 @@ type Struct struct {
 
 	// Struct may be rendered in other files if they're used in more than one place
 	// or are composite type.
-	DontRender bool
+	IsCompositeType bool
 }
 
 func (s *Struct) GolangizeParamNames() error {
