@@ -2,147 +2,190 @@ types:
   - name: pg_catalog.bool
     notNull: true
     to:
-      name: 'bool'
-      zeroValue: 'false'
+      name: "bool"
+      zeroValue: "false"
       nullable: false
 
   - name: pg_catalog.bool
     notNull: false
     to:
-      name: '*bool'
-      zeroValue: 'new(bool)'
+      name: "*bool"
+      zeroValue: "new(bool)"
       nullable: true
 
   - name: pg_catalog.text
     notNull: true
     to:
-      name: 'string'
+      name: "string"
       zeroValue: '""'
       nullable: false
 
   - name: pg_catalog.text
     notNull: false
     to:
-      name: '*string'
-      zeroValue: 'new(string)'
+      name: "*string"
+      zeroValue: "new(string)"
       nullable: true
 
   - name: pg_catalog.varchar
     notNull: true
     to:
-      name: 'string'
+      name: "string"
       zeroValue: '""'
       nullable: false
 
   - name: pg_catalog.varchar
     notNull: false
     to:
-      name: '*string'
-      zeroValue: 'new(string)'
+      name: "*string"
+      zeroValue: "new(string)"
       nullable: true
 
   - name: public.citext
     notNull: true
     to:
-      name: 'string'
+      name: "string"
       zeroValue: '""'
       nullable: false
 
   - name: public.citext
     notNull: false
     to:
-      name: '*string'
-      zeroValue: 'new(string)'
+      name: "*string"
+      zeroValue: "new(string)"
       nullable: true
 
   - name: pg_catalog.uuid
     to:
-      name: 'pgtype.UUID'
-      zeroValue: 'pgtype.UUID{}'
+      name: "pgtype.UUID"
+      zeroValue: "pgtype.UUID{}"
       nullable: false
 
   - name: pg_catalog.date
     notNull: true
     to:
       name: time.Time
-      zeroValue: 'time.Time{}'
+      zeroValue: "time.Time{}"
       nullable: false
 
   - name: pg_catalog.date
     to:
       name: pgtype.Date
-      zeroValue: 'pgtype.Date{}'
+      zeroValue: "pgtype.Date{}"
       nullable: false
 
   - name: pg_catalog.int4
     notNull: true
     to:
       name: int
-      zeroValue: '0'
+      zeroValue: "0"
       nullable: false
 
   - name: pg_catalog.int4
     to:
-      name: '*int'
-      zeroValue: 'new(int)'
+      name: "*int"
+      zeroValue: "new(int)"
       nullable: true
 
   - name: pg_catalog.int8
     notNull: true
     to:
       name: int
-      zeroValue: '0'
+      zeroValue: "0"
       nullable: false
 
   - name: pg_catalog.int8
     to:
-      name: '*int'
-      zeroValue: 'new(int)'
+      name: "*int"
+      zeroValue: "new(int)"
       nullable: true
 
   - name: pg_catalog.float8
     notNull: true
     to:
-      name: 'float64'
-      zeroValue: '0.0'
+      name: "float64"
+      zeroValue: "0.0"
       nullable: false
 
   - name: pg_catalog.float8
     to:
-      name: '*float64'
-      zeroValue: 'new(float64)'
+      name: "*float64"
+      zeroValue: "new(float64)"
       nullable: true
 
   - name: pg_catalog.timestamp
     notNull: true
     to:
-      name: 'time.Time'
-      zeroValue: 'time.Time{}'
+      name: "time.Time"
+      zeroValue: "time.Time{}"
       nullable: false
 
   - name: pg_catalog.timestamp
     to:
-      name: 'pgtype.Timestamp'
-      zeroValue: 'pgtype.Timestamp{}'
+      name: "pgtype.Timestamp"
+      zeroValue: "pgtype.Timestamp{}"
       nullable: false
 
   - name: pg_catalog.timestamptz
     notNull: true
     to:
-      name: 'time.Time'
-      zeroValue: 'time.Time{}'
+      name: "time.Time"
+      zeroValue: "time.Time{}"
       nullable: false
 
   - name: pg_catalog.timestamptz
     to:
-      name: 'pgtype.Timestamp'
-      zeroValue: 'pgtype.Timestamp{}'
+      name: "pgtype.Timestamp"
+      zeroValue: "pgtype.Timestamp{}"
       nullable: false
 
   - name: pg_catalog.numeric
     to:
-      name: 'pgtype.Numeric'
-      zeroValue: 'pgtype.Numeric{}'
+      name: "pgtype.Numeric"
+      zeroValue: "pgtype.Numeric{}"
+      nullable: false
+
+  - name: pg_catalog.json
+    to:
+      name: "pgtype.JSON"
+      zeroValue: "pgtype.JSON{}"
+      nullable: false
+
+  - name: pg_catalog.jsonb
+    to:
+      name: "pgtype.JSONB"
+      zeroValue: "pgtype.JSONB{}"
+      nullable: false
+
+  - name: pg_catalog.oid
+    notNull: true
+    to:
+      name: "uint32"
+      zeroValue: "uint32(0)"
+      nullable: false
+
+  - name: pg_catalog.oid
+    to:
+      name: "pgtype.OID"
+      zeroValue: "pgtype.OID{}"
+      nullable: false
+
+  - name: pg_catalog.cid
+    to:
+      name: "pgtype.CID"
+      zeroValue: "pgtype.CID{}"
+      nullable: false
+
+  - name: pg_catalog.xid
+    to:
+      name: "pgtype.XID"
+      zeroValue: "pgtype.XID{}"
+      nullable: false
+
+  - name: pg_catalog.tid
+    to:
+      name: "pgtype.TID"
+      zeroValue: "pgtype.TID{}"
       nullable: false
 # case PGTypeDef{"pg_catalog.timestamp", true}:
 #   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
