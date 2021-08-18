@@ -1,6 +1,8 @@
 package stmt
 
-import "errors"
+import (
+	"errors"
+)
 
 type ExecMode string
 

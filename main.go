@@ -23,6 +23,7 @@ import (
 type Config struct {
 	DBURL        string                 `yaml:"dbUrl"`
 	Dir          string                 `yaml:"dir"`
+	CacheDir     string                 `yaml:"cacheDir"`
 	TemplateDir  string                 `yaml:"templateDir"`
 	DefaultTypes string                 `yaml:"defaultTypes"`
 	Types        []db.PGTypeTranslation `yaml:"types"`
@@ -35,6 +36,10 @@ func (c *Config) Validate() error {
 
 	if c.Dir == "" {
 		c.Dir = "."
+	}
+
+	if c.CacheDir == "" {
+		c.CacheDir = ".sqlty"
 	}
 
 	return nil
@@ -69,10 +74,11 @@ func compiledir(cfg *Config) error {
 	}
 	defer resolver.Close()
 
-	gen, err := generator.New(path.Join(cfg.TemplateDir, "*.go.tpl"))
+	gen, err := generator.New(path.Join(cfg.TemplateDir, "*.go.tpl"), cfg.CacheDir)
 	if err != nil {
 		return err
 	}
+	defer gen.Close()
 
 	enums := &stmt.Enums{PackageName: "sql", Enums: resolver.Enums()}
 	if err := gen.Enums(cfg.Dir, enums); err != nil {

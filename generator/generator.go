@@ -2,6 +2,7 @@ package generator
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path"
 	"regexp"
@@ -17,6 +18,9 @@ var identFix = regexp.MustCompile(`[^\pL\pN_]`)
 
 type Generator struct {
 	tmpl *template.Template
+
+	cache    *cache
+	cachedir string
 }
 
 var tmplfn = template.FuncMap{
@@ -71,11 +75,11 @@ var tmplfn = template.FuncMap{
 	},
 }
 
-func New(templatepath string) (*Generator, error) {
+func New(templatedir string, cachedir string) (*Generator, error) {
 	var err error
 	g := &Generator{}
 
-	g.tmpl, err = template.New("").Funcs(tmplfn).ParseGlob(templatepath)
+	g.tmpl, err = template.New("").Funcs(tmplfn).ParseGlob(templatedir)
 	if err != nil {
 		return nil, err
 	}
@@ -86,12 +90,27 @@ func New(templatepath string) (*Generator, error) {
 		return nil, errors.New("template not found: query.go.tpl")
 	}
 
+	g.cachedir = cachedir
+	g.cache, err = newCacheFromFile(cachedir)
+	if err != nil {
+		return nil, err
+	}
+
 	return g, nil
 }
 
 func (g *Generator) Query(fname string, q *stmt.Query) error {
 	if q == nil {
 		return errors.New("query is required")
+	}
+
+	updated, err := g.cache.update(fname, q)
+	if err != nil {
+		return err
+	}
+
+	if !updated {
+		return nil
 	}
 
 	f, err := os.Create(fname)
@@ -111,6 +130,15 @@ func (g *Generator) Enums(pkgpath string, enums *stmt.Enums) error {
 	if enums == nil || len(enums.Enums) == 0 {
 		// Remove the file if there are no custom enums
 		os.Remove(fname)
+		return nil
+	}
+
+	updated, err := g.cache.update(fname, enums)
+	if err != nil {
+		return err
+	}
+
+	if !updated {
 		return nil
 	}
 
@@ -134,6 +162,15 @@ func (g *Generator) CompositeTypes(pkgpath string, types *stmt.CompositeTypes) e
 		return nil
 	}
 
+	updated, err := g.cache.update(fname, types)
+	if err != nil {
+		return err
+	}
+
+	if !updated {
+		return nil
+	}
+
 	f, err := os.Create(fname)
 	if err != nil {
 		return err
@@ -144,4 +181,12 @@ func (g *Generator) CompositeTypes(pkgpath string, types *stmt.CompositeTypes) e
 	}
 
 	return f.Close()
+}
+
+func (g *Generator) Close() error {
+	err := g.cache.save(g.cachedir)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return err
 }
