@@ -81,7 +81,7 @@ type PGTypeDef struct {
 }
 
 type PGTypeTranslation struct {
-	Fullname string    `yaml:"name"`
+	Fullname string    `yaml:"name" mapstructure:"name"`
 	NotNull  bool      `yaml:"notNull"`
 	To       stmt.Type `yaml:"to"`
 }

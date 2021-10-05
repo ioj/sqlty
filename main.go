@@ -1,8 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
-	"errors"
+	_ "embed"
 	"fmt"
 	"log"
 	"os"
@@ -15,54 +16,40 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/ioj/sqlty/compiler"
+	"github.com/ioj/sqlty/config"
 	"github.com/ioj/sqlty/db"
 	"github.com/ioj/sqlty/generator"
 	"github.com/ioj/sqlty/stmt"
 )
 
-type Config struct {
-	DBURL        string                 `yaml:"dbUrl"`
-	Dir          string                 `yaml:"dir"`
-	CacheDir     string                 `yaml:"cacheDir"`
-	TemplateDir  string                 `yaml:"templateDir"`
-	DefaultTypes string                 `yaml:"defaultTypes"`
-	Types        []db.PGTypeTranslation `yaml:"types"`
-}
+//go:embed db/types.yaml
+var defaultTypes []byte
 
-func (c *Config) Validate() error {
-	if c.DBURL == "" {
-		return errors.New("dbUrl is required")
-	}
-
-	if c.Dir == "" {
-		c.Dir = "."
-	}
-
-	if c.CacheDir == "" {
-		c.CacheDir = ".sqlty"
-	}
-
-	return nil
-}
-
-func compiledir(cfg *Config) error {
-	sqlFiles, err := filepath.Glob(path.Join(cfg.Dir, "*.sql"))
+func compiledir(cfg *config.Config) error {
+	sqlFiles, err := filepath.Glob(path.Join(cfg.Paths.Source, "*.sql"))
 	if err != nil {
 		return err
 	}
 
 	if len(sqlFiles) == 0 {
-		return fmt.Errorf("no *.sql files to compile in %v", cfg.Dir)
-	}
-
-	defaulttypesfile, err := os.Open(cfg.DefaultTypes)
-	if err != nil {
-		return err
+		return fmt.Errorf("no *.sql files to compile in %v", cfg.Paths.Source)
 	}
 
 	defaulttypes := &db.PGTypeTranslationsFile{}
-	if err := yaml.NewDecoder(defaulttypesfile).Decode(defaulttypes); err != nil {
-		return err
+	if cfg.DefaultTypes == "" {
+		if err := yaml.NewDecoder(bytes.NewReader(defaultTypes)).Decode(defaulttypes); err != nil {
+			return err
+		}
+	} else {
+		f, err := os.Open(cfg.DefaultTypes)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		if err := yaml.NewDecoder(f).Decode(defaulttypes); err != nil {
+			return err
+		}
 	}
 
 	types := append(defaulttypes.Types, cfg.Types...)
@@ -74,14 +61,14 @@ func compiledir(cfg *Config) error {
 	}
 	defer resolver.Close()
 
-	gen, err := generator.New(path.Join(cfg.TemplateDir, "*.go.tpl"), cfg.CacheDir)
+	gen, err := generator.New(cfg.Paths.Templates, cfg.Paths.Cache)
 	if err != nil {
 		return err
 	}
 	defer gen.Close()
 
-	enums := &stmt.Enums{PackageName: "sql", Enums: resolver.Enums()}
-	if err := gen.Enums(cfg.Dir, enums); err != nil {
+	enums := &stmt.Enums{PackageName: cfg.PackageName, Enums: resolver.Enums()}
+	if err := gen.Enums(cfg.Paths.Output, enums); err != nil {
 		return err
 	}
 
@@ -105,7 +92,7 @@ func compiledir(cfg *Config) error {
 		t3 := time.Now()
 		resolveTime += t3.Sub(t2)
 
-		stmtq, err := q.StmtQuery("sql", params, returns)
+		stmtq, err := q.StmtQuery(cfg.PackageName, params, returns)
 		if err != nil {
 			return err
 		}
@@ -115,7 +102,10 @@ func compiledir(cfg *Config) error {
 			stmtq.ExecMode = stmt.ExecModeExec
 		}
 
-		fnameOut := strings.TrimSuffix(fname, path.Ext(fname)) + ".gen.go"
+		// source/filename.sql -> output/filename.gen.go
+		fnameOut := strings.TrimSuffix(path.Base(fname), path.Ext(fname)) + ".gen.go"
+		fnameOut = path.Join(cfg.Paths.Output, fnameOut)
+
 		if err := gen.Query(fnameOut, stmtq); err != nil {
 			return err
 		}
@@ -129,13 +119,13 @@ func compiledir(cfg *Config) error {
 		return err
 	}
 
-	compositeTypes := &stmt.CompositeTypes{PackageName: "sql", Types: ct}
-	if err := gen.CompositeTypes(cfg.Dir, compositeTypes); err != nil {
+	compositeTypes := &stmt.CompositeTypes{PackageName: cfg.PackageName, Types: ct}
+	if err := gen.CompositeTypes(cfg.Paths.Output, compositeTypes); err != nil {
 		return err
 	}
 
 	goimports := exec.Command("goimports", "-w", ".")
-	goimports.Dir = path.Dir(cfg.Dir)
+	goimports.Dir = path.Dir(cfg.Paths.Output)
 	if output, err := goimports.CombinedOutput(); err != nil {
 		return fmt.Errorf("goimports error: %v, %v", err, string(output))
 	}
@@ -144,17 +134,8 @@ func compiledir(cfg *Config) error {
 }
 
 func main() {
-	f, err := os.Open("sqlty.yaml")
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	cfg := &Config{}
-	if err := yaml.NewDecoder(f).Decode(cfg); err != nil {
-		log.Fatal(err)
-	}
-
-	if err := cfg.Validate(); err != nil {
 		log.Fatal(err)
 	}
 

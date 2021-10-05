@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"embed"
 	"errors"
 	"fmt"
 	"os"
@@ -15,6 +16,9 @@ import (
 // Matches all characters that can't be used in golang's identifiers
 // https://golang.org/ref/spec#Identifiers
 var identFix = regexp.MustCompile(`[^\pL\pN_]`)
+
+//go:embed templates/*
+var defaultTemplates embed.FS
 
 type Generator struct {
 	tmpl *template.Template
@@ -79,7 +83,13 @@ func New(templatedir string, cachedir string) (*Generator, error) {
 	var err error
 	g := &Generator{}
 
-	g.tmpl, err = template.New("").Funcs(tmplfn).ParseGlob(templatedir)
+	if templatedir == "" {
+		g.tmpl, err = template.New("").Funcs(tmplfn).ParseFS(defaultTemplates, "templates/*.go.tpl")
+	} else {
+		glob := path.Join(templatedir, "*.go.tpl")
+		g.tmpl, err = template.New("").Funcs(tmplfn).ParseGlob(glob)
+	}
+
 	if err != nil {
 		return nil, err
 	}
