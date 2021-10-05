@@ -144,7 +144,7 @@ func compiledir(cfg *Config) error {
 }
 
 func main() {
-	f, err := os.Open(".sqlty.yaml")
+	f, err := os.Open("sqlty.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
