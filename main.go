@@ -134,21 +134,11 @@ func compiledir(cfg *Config) error {
 		return err
 	}
 
-	// t := time.Now()
 	goimports := exec.Command("goimports", "-w", ".")
 	goimports.Dir = path.Dir(cfg.Dir)
 	if output, err := goimports.CombinedOutput(); err != nil {
 		return fmt.Errorf("goimports error: %v, %v", err, string(output))
 	}
-
-	/*
-		goimportsTime := time.Now().Sub(t)
-		fmt.Printf("Processed files: %d\n", len(sqlFiles))
-		fmt.Printf("Compile time: %.02fs\n", compileTime.Seconds())
-		fmt.Printf("Resolve time: %.02fs\n", resolveTime.Seconds())
-		fmt.Printf("Generate time: %.02fs\n", generateTime.Seconds())
-		fmt.Printf("Goimports time: %.02fs\n", goimportsTime.Seconds())
-	*/
 
 	return nil
 }
