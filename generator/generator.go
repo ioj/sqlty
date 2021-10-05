@@ -109,12 +109,8 @@ func New(templatedir string, cachedir string) (*Generator, error) {
 	return g, nil
 }
 
-func (g *Generator) Query(fname string, q *stmt.Query) error {
-	if q == nil {
-		return errors.New("query is required")
-	}
-
-	updated, err := g.cache.update(fname, q)
+func (g *Generator) generate(fname string, template string, params interface{}) error {
+	updated, err := g.cache.update(fname, params)
 	if err != nil {
 		return err
 	}
@@ -128,11 +124,19 @@ func (g *Generator) Query(fname string, q *stmt.Query) error {
 		return err
 	}
 
-	if err := g.tmpl.Lookup("query.go.tpl").Execute(f, q); err != nil {
+	if err := g.tmpl.Lookup(template).Execute(f, params); err != nil {
 		return err
 	}
 
 	return f.Close()
+}
+
+func (g *Generator) Query(fname string, q *stmt.Query) error {
+	if q == nil {
+		return errors.New("query is required")
+	}
+
+	return g.generate(fname, "query.go.tpl", q)
 }
 
 func (g *Generator) Enums(pkgpath string, enums *stmt.Enums) error {
@@ -143,25 +147,7 @@ func (g *Generator) Enums(pkgpath string, enums *stmt.Enums) error {
 		return nil
 	}
 
-	updated, err := g.cache.update(fname, enums)
-	if err != nil {
-		return err
-	}
-
-	if !updated {
-		return nil
-	}
-
-	f, err := os.Create(fname)
-	if err != nil {
-		return err
-	}
-
-	if err := g.tmpl.Lookup("enums.go.tpl").Execute(f, enums); err != nil {
-		return err
-	}
-
-	return f.Close()
+	return g.generate(fname, "enums.go.tpl", enums)
 }
 
 func (g *Generator) CompositeTypes(pkgpath string, types *stmt.CompositeTypes) error {
@@ -172,25 +158,16 @@ func (g *Generator) CompositeTypes(pkgpath string, types *stmt.CompositeTypes) e
 		return nil
 	}
 
-	updated, err := g.cache.update(fname, types)
-	if err != nil {
-		return err
+	return g.generate(fname, "enums.go.tpl", types)
+}
+
+func (g *Generator) DB(pkgpath string, db *stmt.DB) error {
+	if db == nil {
+		return errors.New("db is required")
 	}
 
-	if !updated {
-		return nil
-	}
-
-	f, err := os.Create(fname)
-	if err != nil {
-		return err
-	}
-
-	if err := g.tmpl.Lookup("composite_types.go.tpl").Execute(f, types); err != nil {
-		return err
-	}
-
-	return f.Close()
+	fname := path.Join(pkgpath, "db.sqlty.gen.go")
+	return g.generate(fname, "db.sqlty.go.tpl", db)
 }
 
 func (g *Generator) Close() error {

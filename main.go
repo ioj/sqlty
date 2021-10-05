@@ -72,6 +72,10 @@ func compiledir(cfg *config.Config) error {
 		return err
 	}
 
+	if err := gen.DB(cfg.Paths.Output, &stmt.DB{PackageName: cfg.PackageName}); err != nil {
+		return err
+	}
+
 	var compileTime, resolveTime, generateTime time.Duration
 
 	for _, fname := range sqlFiles {
