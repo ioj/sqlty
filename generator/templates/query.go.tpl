@@ -9,7 +9,7 @@ package {{.PackageName}}
 
 {{- /* Render struct spreads */ -}}
 {{- range .Params.StructSpread }}
-  {{ if .ShouldRender }}
+  {{ if not .IsCompositeType }}
     type {{ .Name }} struct {
       {{- range .Params }}
         {{ .Name }} {{ .Type.Name -}}
