@@ -83,11 +83,11 @@ func New(templatedir string, cachedir string) (*Generator, error) {
 	var err error
 	g := &Generator{}
 
-	if templatedir == "" {
-		g.tmpl, err = template.New("").Funcs(tmplfn).ParseFS(defaultTemplates, "templates/*.go.tpl")
-	} else {
+	g.tmpl, err = template.New("").Funcs(tmplfn).ParseFS(defaultTemplates, "templates/*.go.tpl")
+
+	if templatedir != "" {
 		glob := path.Join(templatedir, "*.go.tpl")
-		g.tmpl, err = template.New("").Funcs(tmplfn).ParseGlob(glob)
+		g.tmpl, err = g.tmpl.ParseGlob(glob)
 	}
 
 	if err != nil {
