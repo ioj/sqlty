@@ -15,4 +15,12 @@ type {{ $name }} string
       {{ end }}
     )
   {{ end}}
+
+var {{ $name }}IdxMap = map[{{ $name }}]int{
+  {{ range $idx, $val := .Values }}
+    {{- $ident := valueToIdent . -}}
+    {{ $name }}_{{ $ident }}: {{ $idx }},
+  {{ end }}
+}
+
 {{ end }}
