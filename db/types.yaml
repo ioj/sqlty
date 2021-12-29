@@ -13,6 +13,20 @@ types:
       zeroValue: "new(bool)"
       nullable: true
 
+  - name: pg_catalog.bytea
+    notNull: true
+    to:
+      name: "[]byte"
+      zeroValue: "[]byte{}"
+      nullable: true
+
+  - name: pg_catalog.bytea
+    notNull: false
+    to:
+      name: "[]byte"
+      zeroValue: "[]byte{}"
+      nullable: true
+
   - name: pg_catalog.text
     notNull: true
     to:
