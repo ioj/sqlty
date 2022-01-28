@@ -88,6 +88,18 @@ types:
       zeroValue: "pgtype.Date{}"
       nullable: false
 
+  - name: pg_catalog.cidr
+    to:
+      name: "pgtype.CIDR"
+      zeroValue: "pgtype.CIDR{}"
+      nullable: true
+
+  - name: pg_catalog.cidr
+    to:
+      name: net.IPNet
+      zeroValue: "net.IPNet{}"
+      nullable: false
+
   - name: pg_catalog.int4
     notNull: true
     to:
