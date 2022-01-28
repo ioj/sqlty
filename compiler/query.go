@@ -58,6 +58,7 @@ type Query struct {
 
 	name            *token
 	execMode        *token
+	template        *token
 	params          map[string]*Param
 	paramStructName *token
 	returnValueName *token
@@ -132,6 +133,14 @@ func (q *Param) Keys() []*StructKey {
 
 func (q *Query) Name() string {
 	return q.name.Value
+}
+
+func (q *Query) Template() string {
+	if q.template != nil && q.template.Value != "" {
+		return q.template.Value
+	}
+
+	return "array"
 }
 
 func (q *Query) DebugString() string {

@@ -123,6 +123,12 @@ func (s *BaseSQLParserListener) EnterReturnValueName(ctx *ReturnValueNameContext
 // ExitReturnValueName is called when production returnValueName is exited.
 func (s *BaseSQLParserListener) ExitReturnValueName(ctx *ReturnValueNameContext) {}
 
+// EnterTemplateTag is called when production templateTag is entered.
+func (s *BaseSQLParserListener) EnterTemplateTag(ctx *TemplateTagContext) {}
+
+// ExitTemplateTag is called when production templateTag is exited.
+func (s *BaseSQLParserListener) ExitTemplateTag(ctx *TemplateTagContext) {}
+
 // EnterAnyTag is called when production anyTag is entered.
 func (s *BaseSQLParserListener) EnterAnyTag(ctx *AnyTagContext) {}
 
@@ -182,3 +188,9 @@ func (s *BaseSQLParserListener) EnterParamName(ctx *ParamNameContext) {}
 
 // ExitParamName is called when production paramName is exited.
 func (s *BaseSQLParserListener) ExitParamName(ctx *ParamNameContext) {}
+
+// EnterTemplateName is called when production templateName is entered.
+func (s *BaseSQLParserListener) EnterTemplateName(ctx *TemplateNameContext) {}
+
+// ExitTemplateName is called when production templateName is exited.
+func (s *BaseSQLParserListener) ExitTemplateName(ctx *TemplateNameContext) {}

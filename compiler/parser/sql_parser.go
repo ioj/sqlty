@@ -16,78 +16,82 @@ var _ = reflect.Copy
 var _ = strconv.Itoa
 
 var parserATN = []uint16{
-	3, 24715, 42794, 33075, 47597, 16764, 15335, 30598, 22884, 3, 27, 181,
+	3, 24715, 42794, 33075, 47597, 16764, 15335, 30598, 22884, 3, 28, 191,
 	4, 2, 9, 2, 4, 3, 9, 3, 4, 4, 9, 4, 4, 5, 9, 5, 4, 6, 9, 6, 4, 7, 9, 7,
 	4, 8, 9, 8, 4, 9, 9, 9, 4, 10, 9, 10, 4, 11, 9, 11, 4, 12, 9, 12, 4, 13,
 	9, 13, 4, 14, 9, 14, 4, 15, 9, 15, 4, 16, 9, 16, 4, 17, 9, 17, 4, 18, 9,
 	18, 4, 19, 9, 19, 4, 20, 9, 20, 4, 21, 9, 21, 4, 22, 9, 22, 4, 23, 9, 23,
-	4, 24, 9, 24, 4, 25, 9, 25, 4, 26, 9, 26, 4, 27, 9, 27, 4, 28, 9, 28, 3,
-	2, 3, 2, 3, 2, 3, 3, 3, 3, 3, 3, 3, 4, 3, 4, 7, 4, 65, 10, 4, 12, 4, 14,
-	4, 68, 11, 4, 3, 4, 3, 4, 3, 5, 5, 5, 73, 10, 5, 3, 5, 3, 5, 3, 5, 3, 6,
-	3, 6, 7, 6, 80, 10, 6, 12, 6, 14, 6, 83, 11, 6, 3, 7, 3, 7, 3, 7, 3, 7,
-	7, 7, 89, 10, 7, 12, 7, 14, 7, 92, 11, 7, 3, 8, 3, 8, 3, 9, 3, 9, 3, 9,
-	3, 10, 3, 10, 3, 11, 3, 11, 3, 12, 3, 12, 3, 13, 3, 13, 3, 13, 3, 14, 3,
-	14, 3, 14, 3, 14, 3, 15, 3, 15, 3, 15, 3, 16, 3, 16, 3, 17, 3, 17, 3, 17,
-	3, 18, 3, 18, 3, 18, 3, 19, 3, 19, 3, 19, 3, 19, 3, 19, 3, 19, 5, 19, 129,
-	10, 19, 3, 20, 3, 20, 5, 20, 133, 10, 20, 3, 21, 3, 21, 3, 21, 3, 21, 3,
-	22, 3, 22, 3, 22, 3, 22, 7, 22, 143, 10, 22, 12, 22, 14, 22, 146, 11, 22,
-	3, 22, 5, 22, 149, 10, 22, 3, 22, 3, 22, 3, 23, 3, 23, 3, 23, 3, 23, 3,
-	23, 3, 24, 3, 24, 3, 24, 7, 24, 161, 10, 24, 12, 24, 14, 24, 164, 11, 24,
-	3, 24, 5, 24, 167, 10, 24, 3, 25, 3, 25, 3, 26, 3, 26, 3, 26, 3, 26, 5,
-	26, 175, 10, 26, 3, 27, 3, 27, 3, 28, 3, 28, 3, 28, 2, 2, 29, 2, 4, 6,
+	4, 24, 9, 24, 4, 25, 9, 25, 4, 26, 9, 26, 4, 27, 9, 27, 4, 28, 9, 28, 4,
+	29, 9, 29, 4, 30, 9, 30, 3, 2, 3, 2, 3, 2, 3, 3, 3, 3, 3, 3, 3, 4, 3, 4,
+	7, 4, 69, 10, 4, 12, 4, 14, 4, 72, 11, 4, 3, 4, 3, 4, 3, 5, 5, 5, 77, 10,
+	5, 3, 5, 3, 5, 3, 5, 3, 6, 3, 6, 7, 6, 84, 10, 6, 12, 6, 14, 6, 87, 11,
+	6, 3, 7, 3, 7, 3, 7, 3, 7, 7, 7, 93, 10, 7, 12, 7, 14, 7, 96, 11, 7, 3,
+	8, 3, 8, 3, 9, 3, 9, 3, 9, 3, 10, 3, 10, 3, 11, 3, 11, 3, 12, 3, 12, 3,
+	13, 3, 13, 3, 13, 3, 14, 3, 14, 3, 14, 3, 14, 3, 15, 3, 15, 3, 15, 3, 16,
+	3, 16, 3, 17, 3, 17, 3, 17, 3, 18, 3, 18, 3, 18, 3, 19, 3, 19, 3, 19, 3,
+	20, 3, 20, 3, 20, 3, 20, 3, 20, 3, 20, 3, 20, 5, 20, 137, 10, 20, 3, 21,
+	3, 21, 5, 21, 141, 10, 21, 3, 22, 3, 22, 3, 22, 3, 22, 3, 23, 3, 23, 3,
+	23, 3, 23, 7, 23, 151, 10, 23, 12, 23, 14, 23, 154, 11, 23, 3, 23, 5, 23,
+	157, 10, 23, 3, 23, 3, 23, 3, 24, 3, 24, 3, 24, 3, 24, 3, 24, 3, 25, 3,
+	25, 3, 25, 7, 25, 169, 10, 25, 12, 25, 14, 25, 172, 11, 25, 3, 25, 5, 25,
+	175, 10, 25, 3, 26, 3, 26, 3, 27, 3, 27, 3, 27, 3, 27, 5, 27, 183, 10,
+	27, 3, 28, 3, 28, 3, 29, 3, 29, 3, 30, 3, 30, 3, 30, 2, 2, 31, 2, 4, 6,
 	8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42,
-	44, 46, 48, 50, 52, 54, 2, 4, 5, 2, 3, 3, 5, 5, 8, 8, 3, 2, 16, 18, 2,
-	170, 2, 56, 3, 2, 2, 2, 4, 59, 3, 2, 2, 2, 6, 62, 3, 2, 2, 2, 8, 72, 3,
-	2, 2, 2, 10, 77, 3, 2, 2, 2, 12, 84, 3, 2, 2, 2, 14, 93, 3, 2, 2, 2, 16,
-	95, 3, 2, 2, 2, 18, 98, 3, 2, 2, 2, 20, 100, 3, 2, 2, 2, 22, 102, 3, 2,
-	2, 2, 24, 104, 3, 2, 2, 2, 26, 107, 3, 2, 2, 2, 28, 111, 3, 2, 2, 2, 30,
-	114, 3, 2, 2, 2, 32, 116, 3, 2, 2, 2, 34, 119, 3, 2, 2, 2, 36, 128, 3,
-	2, 2, 2, 38, 132, 3, 2, 2, 2, 40, 134, 3, 2, 2, 2, 42, 138, 3, 2, 2, 2,
-	44, 152, 3, 2, 2, 2, 46, 157, 3, 2, 2, 2, 48, 168, 3, 2, 2, 2, 50, 174,
-	3, 2, 2, 2, 52, 176, 3, 2, 2, 2, 54, 178, 3, 2, 2, 2, 56, 57, 5, 4, 3,
-	2, 57, 58, 7, 2, 2, 3, 58, 3, 3, 2, 2, 2, 59, 60, 5, 6, 4, 2, 60, 61, 5,
-	8, 5, 2, 61, 5, 3, 2, 2, 2, 62, 66, 7, 4, 2, 2, 63, 65, 5, 36, 19, 2, 64,
-	63, 3, 2, 2, 2, 65, 68, 3, 2, 2, 2, 66, 64, 3, 2, 2, 2, 66, 67, 3, 2, 2,
-	2, 67, 69, 3, 2, 2, 2, 68, 66, 3, 2, 2, 2, 69, 70, 7, 26, 2, 2, 70, 7,
-	3, 2, 2, 2, 71, 73, 5, 10, 6, 2, 72, 71, 3, 2, 2, 2, 72, 73, 3, 2, 2, 2,
-	73, 74, 3, 2, 2, 2, 74, 75, 5, 12, 7, 2, 75, 76, 7, 6, 2, 2, 76, 9, 3,
-	2, 2, 2, 77, 81, 7, 10, 2, 2, 78, 80, 7, 10, 2, 2, 79, 78, 3, 2, 2, 2,
-	80, 83, 3, 2, 2, 2, 81, 79, 3, 2, 2, 2, 81, 82, 3, 2, 2, 2, 82, 11, 3,
-	2, 2, 2, 83, 81, 3, 2, 2, 2, 84, 90, 5, 14, 8, 2, 85, 89, 5, 16, 9, 2,
-	86, 89, 5, 14, 8, 2, 87, 89, 5, 10, 6, 2, 88, 85, 3, 2, 2, 2, 88, 86, 3,
-	2, 2, 2, 88, 87, 3, 2, 2, 2, 89, 92, 3, 2, 2, 2, 90, 88, 3, 2, 2, 2, 90,
-	91, 3, 2, 2, 2, 91, 13, 3, 2, 2, 2, 92, 90, 3, 2, 2, 2, 93, 94, 9, 2, 2,
-	2, 94, 15, 3, 2, 2, 2, 95, 96, 7, 9, 2, 2, 96, 97, 5, 18, 10, 2, 97, 17,
-	3, 2, 2, 2, 98, 99, 7, 3, 2, 2, 99, 19, 3, 2, 2, 2, 100, 101, 7, 3, 2,
-	2, 101, 21, 3, 2, 2, 2, 102, 103, 7, 3, 2, 2, 103, 23, 3, 2, 2, 2, 104,
-	105, 7, 13, 2, 2, 105, 106, 5, 52, 27, 2, 106, 25, 3, 2, 2, 2, 107, 108,
-	7, 14, 2, 2, 108, 109, 5, 54, 28, 2, 109, 110, 5, 38, 20, 2, 110, 27, 3,
-	2, 2, 2, 111, 112, 7, 15, 2, 2, 112, 113, 5, 22, 12, 2, 113, 29, 3, 2,
-	2, 2, 114, 115, 9, 3, 2, 2, 115, 31, 3, 2, 2, 2, 116, 117, 7, 19, 2, 2,
-	117, 118, 5, 46, 24, 2, 118, 33, 3, 2, 2, 2, 119, 120, 7, 20, 2, 2, 120,
-	121, 5, 20, 11, 2, 121, 35, 3, 2, 2, 2, 122, 129, 5, 24, 13, 2, 123, 129,
-	5, 26, 14, 2, 124, 129, 5, 28, 15, 2, 125, 129, 5, 30, 16, 2, 126, 129,
-	5, 32, 17, 2, 127, 129, 5, 34, 18, 2, 128, 122, 3, 2, 2, 2, 128, 123, 3,
-	2, 2, 2, 128, 124, 3, 2, 2, 2, 128, 125, 3, 2, 2, 2, 128, 126, 3, 2, 2,
-	2, 128, 127, 3, 2, 2, 2, 129, 37, 3, 2, 2, 2, 130, 133, 5, 40, 21, 2, 131,
-	133, 5, 44, 23, 2, 132, 130, 3, 2, 2, 2, 132, 131, 3, 2, 2, 2, 133, 39,
-	3, 2, 2, 2, 134, 135, 7, 21, 2, 2, 135, 136, 7, 12, 2, 2, 136, 137, 7,
-	22, 2, 2, 137, 41, 3, 2, 2, 2, 138, 139, 7, 21, 2, 2, 139, 144, 5, 48,
-	25, 2, 140, 141, 7, 24, 2, 2, 141, 143, 5, 48, 25, 2, 142, 140, 3, 2, 2,
-	2, 143, 146, 3, 2, 2, 2, 144, 142, 3, 2, 2, 2, 144, 145, 3, 2, 2, 2, 145,
-	148, 3, 2, 2, 2, 146, 144, 3, 2, 2, 2, 147, 149, 7, 24, 2, 2, 148, 147,
-	3, 2, 2, 2, 148, 149, 3, 2, 2, 2, 149, 150, 3, 2, 2, 2, 150, 151, 7, 22,
-	2, 2, 151, 43, 3, 2, 2, 2, 152, 153, 7, 21, 2, 2, 153, 154, 5, 42, 22,
-	2, 154, 155, 7, 12, 2, 2, 155, 156, 7, 22, 2, 2, 156, 45, 3, 2, 2, 2, 157,
-	162, 5, 50, 26, 2, 158, 159, 7, 24, 2, 2, 159, 161, 5, 50, 26, 2, 160,
-	158, 3, 2, 2, 2, 161, 164, 3, 2, 2, 2, 162, 160, 3, 2, 2, 2, 162, 163,
-	3, 2, 2, 2, 163, 166, 3, 2, 2, 2, 164, 162, 3, 2, 2, 2, 165, 167, 7, 24,
-	2, 2, 166, 165, 3, 2, 2, 2, 166, 167, 3, 2, 2, 2, 167, 47, 3, 2, 2, 2,
-	168, 169, 7, 3, 2, 2, 169, 49, 3, 2, 2, 2, 170, 175, 7, 3, 2, 2, 171, 172,
-	7, 3, 2, 2, 172, 173, 7, 23, 2, 2, 173, 175, 7, 3, 2, 2, 174, 170, 3, 2,
-	2, 2, 174, 171, 3, 2, 2, 2, 175, 51, 3, 2, 2, 2, 176, 177, 7, 3, 2, 2,
-	177, 53, 3, 2, 2, 2, 178, 179, 7, 3, 2, 2, 179, 55, 3, 2, 2, 2, 14, 66,
-	72, 81, 88, 90, 128, 132, 144, 148, 162, 166, 174,
+	44, 46, 48, 50, 52, 54, 56, 58, 2, 4, 5, 2, 3, 3, 5, 5, 8, 8, 3, 2, 16,
+	18, 2, 179, 2, 60, 3, 2, 2, 2, 4, 63, 3, 2, 2, 2, 6, 66, 3, 2, 2, 2, 8,
+	76, 3, 2, 2, 2, 10, 81, 3, 2, 2, 2, 12, 88, 3, 2, 2, 2, 14, 97, 3, 2, 2,
+	2, 16, 99, 3, 2, 2, 2, 18, 102, 3, 2, 2, 2, 20, 104, 3, 2, 2, 2, 22, 106,
+	3, 2, 2, 2, 24, 108, 3, 2, 2, 2, 26, 111, 3, 2, 2, 2, 28, 115, 3, 2, 2,
+	2, 30, 118, 3, 2, 2, 2, 32, 120, 3, 2, 2, 2, 34, 123, 3, 2, 2, 2, 36, 126,
+	3, 2, 2, 2, 38, 136, 3, 2, 2, 2, 40, 140, 3, 2, 2, 2, 42, 142, 3, 2, 2,
+	2, 44, 146, 3, 2, 2, 2, 46, 160, 3, 2, 2, 2, 48, 165, 3, 2, 2, 2, 50, 176,
+	3, 2, 2, 2, 52, 182, 3, 2, 2, 2, 54, 184, 3, 2, 2, 2, 56, 186, 3, 2, 2,
+	2, 58, 188, 3, 2, 2, 2, 60, 61, 5, 4, 3, 2, 61, 62, 7, 2, 2, 3, 62, 3,
+	3, 2, 2, 2, 63, 64, 5, 6, 4, 2, 64, 65, 5, 8, 5, 2, 65, 5, 3, 2, 2, 2,
+	66, 70, 7, 4, 2, 2, 67, 69, 5, 38, 20, 2, 68, 67, 3, 2, 2, 2, 69, 72, 3,
+	2, 2, 2, 70, 68, 3, 2, 2, 2, 70, 71, 3, 2, 2, 2, 71, 73, 3, 2, 2, 2, 72,
+	70, 3, 2, 2, 2, 73, 74, 7, 27, 2, 2, 74, 7, 3, 2, 2, 2, 75, 77, 5, 10,
+	6, 2, 76, 75, 3, 2, 2, 2, 76, 77, 3, 2, 2, 2, 77, 78, 3, 2, 2, 2, 78, 79,
+	5, 12, 7, 2, 79, 80, 7, 6, 2, 2, 80, 9, 3, 2, 2, 2, 81, 85, 7, 10, 2, 2,
+	82, 84, 7, 10, 2, 2, 83, 82, 3, 2, 2, 2, 84, 87, 3, 2, 2, 2, 85, 83, 3,
+	2, 2, 2, 85, 86, 3, 2, 2, 2, 86, 11, 3, 2, 2, 2, 87, 85, 3, 2, 2, 2, 88,
+	94, 5, 14, 8, 2, 89, 93, 5, 16, 9, 2, 90, 93, 5, 14, 8, 2, 91, 93, 5, 10,
+	6, 2, 92, 89, 3, 2, 2, 2, 92, 90, 3, 2, 2, 2, 92, 91, 3, 2, 2, 2, 93, 96,
+	3, 2, 2, 2, 94, 92, 3, 2, 2, 2, 94, 95, 3, 2, 2, 2, 95, 13, 3, 2, 2, 2,
+	96, 94, 3, 2, 2, 2, 97, 98, 9, 2, 2, 2, 98, 15, 3, 2, 2, 2, 99, 100, 7,
+	9, 2, 2, 100, 101, 5, 18, 10, 2, 101, 17, 3, 2, 2, 2, 102, 103, 7, 3, 2,
+	2, 103, 19, 3, 2, 2, 2, 104, 105, 7, 3, 2, 2, 105, 21, 3, 2, 2, 2, 106,
+	107, 7, 3, 2, 2, 107, 23, 3, 2, 2, 2, 108, 109, 7, 13, 2, 2, 109, 110,
+	5, 54, 28, 2, 110, 25, 3, 2, 2, 2, 111, 112, 7, 14, 2, 2, 112, 113, 5,
+	56, 29, 2, 113, 114, 5, 40, 21, 2, 114, 27, 3, 2, 2, 2, 115, 116, 7, 15,
+	2, 2, 116, 117, 5, 22, 12, 2, 117, 29, 3, 2, 2, 2, 118, 119, 9, 3, 2, 2,
+	119, 31, 3, 2, 2, 2, 120, 121, 7, 19, 2, 2, 121, 122, 5, 48, 25, 2, 122,
+	33, 3, 2, 2, 2, 123, 124, 7, 20, 2, 2, 124, 125, 5, 20, 11, 2, 125, 35,
+	3, 2, 2, 2, 126, 127, 7, 21, 2, 2, 127, 128, 5, 58, 30, 2, 128, 37, 3,
+	2, 2, 2, 129, 137, 5, 24, 13, 2, 130, 137, 5, 26, 14, 2, 131, 137, 5, 28,
+	15, 2, 132, 137, 5, 30, 16, 2, 133, 137, 5, 32, 17, 2, 134, 137, 5, 34,
+	18, 2, 135, 137, 5, 36, 19, 2, 136, 129, 3, 2, 2, 2, 136, 130, 3, 2, 2,
+	2, 136, 131, 3, 2, 2, 2, 136, 132, 3, 2, 2, 2, 136, 133, 3, 2, 2, 2, 136,
+	134, 3, 2, 2, 2, 136, 135, 3, 2, 2, 2, 137, 39, 3, 2, 2, 2, 138, 141, 5,
+	42, 22, 2, 139, 141, 5, 46, 24, 2, 140, 138, 3, 2, 2, 2, 140, 139, 3, 2,
+	2, 2, 141, 41, 3, 2, 2, 2, 142, 143, 7, 22, 2, 2, 143, 144, 7, 12, 2, 2,
+	144, 145, 7, 23, 2, 2, 145, 43, 3, 2, 2, 2, 146, 147, 7, 22, 2, 2, 147,
+	152, 5, 50, 26, 2, 148, 149, 7, 25, 2, 2, 149, 151, 5, 50, 26, 2, 150,
+	148, 3, 2, 2, 2, 151, 154, 3, 2, 2, 2, 152, 150, 3, 2, 2, 2, 152, 153,
+	3, 2, 2, 2, 153, 156, 3, 2, 2, 2, 154, 152, 3, 2, 2, 2, 155, 157, 7, 25,
+	2, 2, 156, 155, 3, 2, 2, 2, 156, 157, 3, 2, 2, 2, 157, 158, 3, 2, 2, 2,
+	158, 159, 7, 23, 2, 2, 159, 45, 3, 2, 2, 2, 160, 161, 7, 22, 2, 2, 161,
+	162, 5, 44, 23, 2, 162, 163, 7, 12, 2, 2, 163, 164, 7, 23, 2, 2, 164, 47,
+	3, 2, 2, 2, 165, 170, 5, 52, 27, 2, 166, 167, 7, 25, 2, 2, 167, 169, 5,
+	52, 27, 2, 168, 166, 3, 2, 2, 2, 169, 172, 3, 2, 2, 2, 170, 168, 3, 2,
+	2, 2, 170, 171, 3, 2, 2, 2, 171, 174, 3, 2, 2, 2, 172, 170, 3, 2, 2, 2,
+	173, 175, 7, 25, 2, 2, 174, 173, 3, 2, 2, 2, 174, 175, 3, 2, 2, 2, 175,
+	49, 3, 2, 2, 2, 176, 177, 7, 3, 2, 2, 177, 51, 3, 2, 2, 2, 178, 183, 7,
+	3, 2, 2, 179, 180, 7, 3, 2, 2, 180, 181, 7, 24, 2, 2, 181, 183, 7, 3, 2,
+	2, 182, 178, 3, 2, 2, 2, 182, 179, 3, 2, 2, 2, 183, 53, 3, 2, 2, 2, 184,
+	185, 7, 3, 2, 2, 185, 55, 3, 2, 2, 2, 186, 187, 7, 3, 2, 2, 187, 57, 3,
+	2, 2, 2, 188, 189, 7, 3, 2, 2, 189, 59, 3, 2, 2, 2, 14, 70, 76, 85, 92,
+	94, 136, 140, 152, 156, 170, 174, 182,
 }
 var deserializer = antlr.NewATNDeserializer(nil)
 var deserializedATN = deserializer.DeserializeFromUInt16(parserATN)
@@ -95,21 +99,23 @@ var deserializedATN = deserializer.DeserializeFromUInt16(parserATN)
 var literalNames = []string{
 	"", "", "'/*'", "", "';'", "", "", "':'", "", "", "'...'", "'@name'", "'@param'",
 	"'@paramStructName'", "'@one'", "'@many'", "'@exec'", "'@notNullParams'",
-	"'@returnValueName'", "'('", "')'", "'.'", "','", "", "'*/'", "'::'",
+	"'@returnValueName'", "'@template'", "'('", "')'", "'.'", "','", "", "'*/'",
+	"'::'",
 }
 var symbolicNames = []string{
 	"", "ID", "OPEN_COMMENT", "WORD", "EOF_STATEMENT", "WSL", "STRING", "PARAM_MARK",
 	"LINE_COMMENT", "WS", "SPREAD", "NAME_TAG", "TYPE_TAG", "PARAM_STRUCT_NAME_TAG",
 	"ONE_TAG", "MANY_TAG", "EXEC_TAG", "NOT_NULL_PARAMS_TAG", "RETURN_VALUE_NAME_TAG",
-	"OB", "CB", "DOT", "COMMA", "ANY", "CLOSE_COMMENT", "CAST",
+	"TEMPLATE_TAG", "OB", "CB", "DOT", "COMMA", "ANY", "CLOSE_COMMENT", "CAST",
 }
 
 var ruleNames = []string{
 	"input", "query", "queryDef", "statement", "lineComment", "statementBody",
 	"word", "param", "paramId", "returnValueNameId", "paramStructNameId", "nameTag",
 	"paramTag", "paramStructNameTag", "modeTag", "notNullParamsTag", "returnValueName",
-	"anyTag", "transformRule", "spreadTransform", "structTransform", "structSpreadTransform",
-	"notNullTransform", "key", "notNullParam", "queryName", "paramName",
+	"templateTag", "anyTag", "transformRule", "spreadTransform", "structTransform",
+	"structSpreadTransform", "notNullTransform", "key", "notNullParam", "queryName",
+	"paramName", "templateName",
 }
 var decisionToDFA = make([]*antlr.DFA, len(deserializedATN.DecisionToState))
 
@@ -158,13 +164,14 @@ const (
 	SQLParserEXEC_TAG              = 16
 	SQLParserNOT_NULL_PARAMS_TAG   = 17
 	SQLParserRETURN_VALUE_NAME_TAG = 18
-	SQLParserOB                    = 19
-	SQLParserCB                    = 20
-	SQLParserDOT                   = 21
-	SQLParserCOMMA                 = 22
-	SQLParserANY                   = 23
-	SQLParserCLOSE_COMMENT         = 24
-	SQLParserCAST                  = 25
+	SQLParserTEMPLATE_TAG          = 19
+	SQLParserOB                    = 20
+	SQLParserCB                    = 21
+	SQLParserDOT                   = 22
+	SQLParserCOMMA                 = 23
+	SQLParserANY                   = 24
+	SQLParserCLOSE_COMMENT         = 25
+	SQLParserCAST                  = 26
 )
 
 // SQLParser rules.
@@ -186,16 +193,18 @@ const (
 	SQLParserRULE_modeTag               = 14
 	SQLParserRULE_notNullParamsTag      = 15
 	SQLParserRULE_returnValueName       = 16
-	SQLParserRULE_anyTag                = 17
-	SQLParserRULE_transformRule         = 18
-	SQLParserRULE_spreadTransform       = 19
-	SQLParserRULE_structTransform       = 20
-	SQLParserRULE_structSpreadTransform = 21
-	SQLParserRULE_notNullTransform      = 22
-	SQLParserRULE_key                   = 23
-	SQLParserRULE_notNullParam          = 24
-	SQLParserRULE_queryName             = 25
-	SQLParserRULE_paramName             = 26
+	SQLParserRULE_templateTag           = 17
+	SQLParserRULE_anyTag                = 18
+	SQLParserRULE_transformRule         = 19
+	SQLParserRULE_spreadTransform       = 20
+	SQLParserRULE_structTransform       = 21
+	SQLParserRULE_structSpreadTransform = 22
+	SQLParserRULE_notNullTransform      = 23
+	SQLParserRULE_key                   = 24
+	SQLParserRULE_notNullParam          = 25
+	SQLParserRULE_queryName             = 26
+	SQLParserRULE_paramName             = 27
+	SQLParserRULE_templateName          = 28
 )
 
 // IInputContext is an interface to support dynamic dispatch.
@@ -292,11 +301,11 @@ func (p *SQLParser) Input() (localctx IInputContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(54)
+		p.SetState(58)
 		p.Query()
 	}
 	{
-		p.SetState(55)
+		p.SetState(59)
 		p.Match(SQLParserEOF)
 	}
 
@@ -403,11 +412,11 @@ func (p *SQLParser) Query() (localctx IQueryContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(57)
+		p.SetState(61)
 		p.QueryDef()
 	}
 	{
-		p.SetState(58)
+		p.SetState(62)
 		p.Statement()
 	}
 
@@ -526,25 +535,25 @@ func (p *SQLParser) QueryDef() (localctx IQueryDefContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(60)
+		p.SetState(64)
 		p.Match(SQLParserOPEN_COMMENT)
 	}
-	p.SetState(64)
+	p.SetState(68)
 	p.GetErrorHandler().Sync(p)
 	_la = p.GetTokenStream().LA(1)
 
-	for ((_la)&-(0x1f+1)) == 0 && ((1<<uint(_la))&((1<<SQLParserNAME_TAG)|(1<<SQLParserTYPE_TAG)|(1<<SQLParserPARAM_STRUCT_NAME_TAG)|(1<<SQLParserONE_TAG)|(1<<SQLParserMANY_TAG)|(1<<SQLParserEXEC_TAG)|(1<<SQLParserNOT_NULL_PARAMS_TAG)|(1<<SQLParserRETURN_VALUE_NAME_TAG))) != 0 {
+	for ((_la)&-(0x1f+1)) == 0 && ((1<<uint(_la))&((1<<SQLParserNAME_TAG)|(1<<SQLParserTYPE_TAG)|(1<<SQLParserPARAM_STRUCT_NAME_TAG)|(1<<SQLParserONE_TAG)|(1<<SQLParserMANY_TAG)|(1<<SQLParserEXEC_TAG)|(1<<SQLParserNOT_NULL_PARAMS_TAG)|(1<<SQLParserRETURN_VALUE_NAME_TAG)|(1<<SQLParserTEMPLATE_TAG))) != 0 {
 		{
-			p.SetState(61)
+			p.SetState(65)
 			p.AnyTag()
 		}
 
-		p.SetState(66)
+		p.SetState(70)
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
 	}
 	{
-		p.SetState(67)
+		p.SetState(71)
 		p.Match(SQLParserCLOSE_COMMENT)
 	}
 
@@ -655,23 +664,23 @@ func (p *SQLParser) Statement() (localctx IStatementContext) {
 	}()
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(70)
+	p.SetState(74)
 	p.GetErrorHandler().Sync(p)
 	_la = p.GetTokenStream().LA(1)
 
 	if _la == SQLParserLINE_COMMENT {
 		{
-			p.SetState(69)
+			p.SetState(73)
 			p.LineComment()
 		}
 
 	}
 	{
-		p.SetState(72)
+		p.SetState(76)
 		p.StatementBody()
 	}
 	{
-		p.SetState(73)
+		p.SetState(77)
 		p.Match(SQLParserEOF_STATEMENT)
 	}
 
@@ -768,22 +777,22 @@ func (p *SQLParser) LineComment() (localctx ILineCommentContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(75)
+		p.SetState(79)
 		p.Match(SQLParserLINE_COMMENT)
 	}
-	p.SetState(79)
+	p.SetState(83)
 	p.GetErrorHandler().Sync(p)
 	_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 2, p.GetParserRuleContext())
 
 	for _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 		if _alt == 1 {
 			{
-				p.SetState(76)
+				p.SetState(80)
 				p.Match(SQLParserLINE_COMMENT)
 			}
 
 		}
-		p.SetState(81)
+		p.SetState(85)
 		p.GetErrorHandler().Sync(p)
 		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 2, p.GetParserRuleContext())
 	}
@@ -941,33 +950,33 @@ func (p *SQLParser) StatementBody() (localctx IStatementBodyContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(82)
+		p.SetState(86)
 		p.Word()
 	}
-	p.SetState(88)
+	p.SetState(92)
 	p.GetErrorHandler().Sync(p)
 	_la = p.GetTokenStream().LA(1)
 
 	for ((_la)&-(0x1f+1)) == 0 && ((1<<uint(_la))&((1<<SQLParserID)|(1<<SQLParserWORD)|(1<<SQLParserSTRING)|(1<<SQLParserPARAM_MARK)|(1<<SQLParserLINE_COMMENT))) != 0 {
-		p.SetState(86)
+		p.SetState(90)
 		p.GetErrorHandler().Sync(p)
 
 		switch p.GetTokenStream().LA(1) {
 		case SQLParserPARAM_MARK:
 			{
-				p.SetState(83)
+				p.SetState(87)
 				p.Param()
 			}
 
 		case SQLParserID, SQLParserWORD, SQLParserSTRING:
 			{
-				p.SetState(84)
+				p.SetState(88)
 				p.Word()
 			}
 
 		case SQLParserLINE_COMMENT:
 			{
-				p.SetState(85)
+				p.SetState(89)
 				p.LineComment()
 			}
 
@@ -975,7 +984,7 @@ func (p *SQLParser) StatementBody() (localctx IStatementBodyContext) {
 			panic(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
 		}
 
-		p.SetState(90)
+		p.SetState(94)
 		p.GetErrorHandler().Sync(p)
 		_la = p.GetTokenStream().LA(1)
 	}
@@ -1076,7 +1085,7 @@ func (p *SQLParser) Word() (localctx IWordContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(91)
+		p.SetState(95)
 		_la = p.GetTokenStream().LA(1)
 
 		if !(((_la)&-(0x1f+1)) == 0 && ((1<<uint(_la))&((1<<SQLParserID)|(1<<SQLParserWORD)|(1<<SQLParserSTRING))) != 0) {
@@ -1184,11 +1193,11 @@ func (p *SQLParser) Param() (localctx IParamContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(93)
+		p.SetState(97)
 		p.Match(SQLParserPARAM_MARK)
 	}
 	{
-		p.SetState(94)
+		p.SetState(98)
 		p.ParamId()
 	}
 
@@ -1279,7 +1288,7 @@ func (p *SQLParser) ParamId() (localctx IParamIdContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(96)
+		p.SetState(100)
 		p.Match(SQLParserID)
 	}
 
@@ -1370,7 +1379,7 @@ func (p *SQLParser) ReturnValueNameId() (localctx IReturnValueNameIdContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(98)
+		p.SetState(102)
 		p.Match(SQLParserID)
 	}
 
@@ -1461,7 +1470,7 @@ func (p *SQLParser) ParamStructNameId() (localctx IParamStructNameIdContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(100)
+		p.SetState(104)
 		p.Match(SQLParserID)
 	}
 
@@ -1562,11 +1571,11 @@ func (p *SQLParser) NameTag() (localctx INameTagContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(102)
+		p.SetState(106)
 		p.Match(SQLParserNAME_TAG)
 	}
 	{
-		p.SetState(103)
+		p.SetState(107)
 		p.QueryName()
 	}
 
@@ -1677,15 +1686,15 @@ func (p *SQLParser) ParamTag() (localctx IParamTagContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(105)
+		p.SetState(109)
 		p.Match(SQLParserTYPE_TAG)
 	}
 	{
-		p.SetState(106)
+		p.SetState(110)
 		p.ParamName()
 	}
 	{
-		p.SetState(107)
+		p.SetState(111)
 		p.TransformRule()
 	}
 
@@ -1786,11 +1795,11 @@ func (p *SQLParser) ParamStructNameTag() (localctx IParamStructNameTagContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(109)
+		p.SetState(113)
 		p.Match(SQLParserPARAM_STRUCT_NAME_TAG)
 	}
 	{
-		p.SetState(110)
+		p.SetState(114)
 		p.ParamStructNameId()
 	}
 
@@ -1890,7 +1899,7 @@ func (p *SQLParser) ModeTag() (localctx IModeTagContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(112)
+		p.SetState(116)
 		_la = p.GetTokenStream().LA(1)
 
 		if !(((_la)&-(0x1f+1)) == 0 && ((1<<uint(_la))&((1<<SQLParserONE_TAG)|(1<<SQLParserMANY_TAG)|(1<<SQLParserEXEC_TAG))) != 0) {
@@ -1998,11 +2007,11 @@ func (p *SQLParser) NotNullParamsTag() (localctx INotNullParamsTagContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(114)
+		p.SetState(118)
 		p.Match(SQLParserNOT_NULL_PARAMS_TAG)
 	}
 	{
-		p.SetState(115)
+		p.SetState(119)
 		p.NotNullTransform()
 	}
 
@@ -2103,12 +2112,117 @@ func (p *SQLParser) ReturnValueName() (localctx IReturnValueNameContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(117)
+		p.SetState(121)
 		p.Match(SQLParserRETURN_VALUE_NAME_TAG)
 	}
 	{
-		p.SetState(118)
+		p.SetState(122)
 		p.ReturnValueNameId()
+	}
+
+	return localctx
+}
+
+// ITemplateTagContext is an interface to support dynamic dispatch.
+type ITemplateTagContext interface {
+	antlr.ParserRuleContext
+
+	// GetParser returns the parser.
+	GetParser() antlr.Parser
+
+	// IsTemplateTagContext differentiates from other interfaces.
+	IsTemplateTagContext()
+}
+
+type TemplateTagContext struct {
+	*antlr.BaseParserRuleContext
+	parser antlr.Parser
+}
+
+func NewEmptyTemplateTagContext() *TemplateTagContext {
+	var p = new(TemplateTagContext)
+	p.BaseParserRuleContext = antlr.NewBaseParserRuleContext(nil, -1)
+	p.RuleIndex = SQLParserRULE_templateTag
+	return p
+}
+
+func (*TemplateTagContext) IsTemplateTagContext() {}
+
+func NewTemplateTagContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *TemplateTagContext {
+	var p = new(TemplateTagContext)
+
+	p.BaseParserRuleContext = antlr.NewBaseParserRuleContext(parent, invokingState)
+
+	p.parser = parser
+	p.RuleIndex = SQLParserRULE_templateTag
+
+	return p
+}
+
+func (s *TemplateTagContext) GetParser() antlr.Parser { return s.parser }
+
+func (s *TemplateTagContext) TEMPLATE_TAG() antlr.TerminalNode {
+	return s.GetToken(SQLParserTEMPLATE_TAG, 0)
+}
+
+func (s *TemplateTagContext) TemplateName() ITemplateNameContext {
+	var t = s.GetTypedRuleContext(reflect.TypeOf((*ITemplateNameContext)(nil)).Elem(), 0)
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(ITemplateNameContext)
+}
+
+func (s *TemplateTagContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *TemplateTagContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
+	return antlr.TreesStringTree(s, ruleNames, recog)
+}
+
+func (s *TemplateTagContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(SQLParserListener); ok {
+		listenerT.EnterTemplateTag(s)
+	}
+}
+
+func (s *TemplateTagContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(SQLParserListener); ok {
+		listenerT.ExitTemplateTag(s)
+	}
+}
+
+func (p *SQLParser) TemplateTag() (localctx ITemplateTagContext) {
+	localctx = NewTemplateTagContext(p, p.GetParserRuleContext(), p.GetState())
+	p.EnterRule(localctx, 34, SQLParserRULE_templateTag)
+
+	defer func() {
+		p.ExitRule()
+	}()
+
+	defer func() {
+		if err := recover(); err != nil {
+			if v, ok := err.(antlr.RecognitionException); ok {
+				localctx.SetException(v)
+				p.GetErrorHandler().ReportError(p, v)
+				p.GetErrorHandler().Recover(p, v)
+			} else {
+				panic(err)
+			}
+		}
+	}()
+
+	p.EnterOuterAlt(localctx, 1)
+	{
+		p.SetState(124)
+		p.Match(SQLParserTEMPLATE_TAG)
+	}
+	{
+		p.SetState(125)
+		p.TemplateName()
 	}
 
 	return localctx
@@ -2212,6 +2326,16 @@ func (s *AnyTagContext) ReturnValueName() IReturnValueNameContext {
 	return t.(IReturnValueNameContext)
 }
 
+func (s *AnyTagContext) TemplateTag() ITemplateTagContext {
+	var t = s.GetTypedRuleContext(reflect.TypeOf((*ITemplateTagContext)(nil)).Elem(), 0)
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(ITemplateTagContext)
+}
+
 func (s *AnyTagContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
@@ -2234,7 +2358,7 @@ func (s *AnyTagContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *SQLParser) AnyTag() (localctx IAnyTagContext) {
 	localctx = NewAnyTagContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 34, SQLParserRULE_anyTag)
+	p.EnterRule(localctx, 36, SQLParserRULE_anyTag)
 
 	defer func() {
 		p.ExitRule()
@@ -2252,50 +2376,57 @@ func (p *SQLParser) AnyTag() (localctx IAnyTagContext) {
 		}
 	}()
 
-	p.SetState(126)
+	p.SetState(134)
 	p.GetErrorHandler().Sync(p)
 
 	switch p.GetTokenStream().LA(1) {
 	case SQLParserNAME_TAG:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(120)
+			p.SetState(127)
 			p.NameTag()
 		}
 
 	case SQLParserTYPE_TAG:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(121)
+			p.SetState(128)
 			p.ParamTag()
 		}
 
 	case SQLParserPARAM_STRUCT_NAME_TAG:
 		p.EnterOuterAlt(localctx, 3)
 		{
-			p.SetState(122)
+			p.SetState(129)
 			p.ParamStructNameTag()
 		}
 
 	case SQLParserONE_TAG, SQLParserMANY_TAG, SQLParserEXEC_TAG:
 		p.EnterOuterAlt(localctx, 4)
 		{
-			p.SetState(123)
+			p.SetState(130)
 			p.ModeTag()
 		}
 
 	case SQLParserNOT_NULL_PARAMS_TAG:
 		p.EnterOuterAlt(localctx, 5)
 		{
-			p.SetState(124)
+			p.SetState(131)
 			p.NotNullParamsTag()
 		}
 
 	case SQLParserRETURN_VALUE_NAME_TAG:
 		p.EnterOuterAlt(localctx, 6)
 		{
-			p.SetState(125)
+			p.SetState(132)
 			p.ReturnValueName()
+		}
+
+	case SQLParserTEMPLATE_TAG:
+		p.EnterOuterAlt(localctx, 7)
+		{
+			p.SetState(133)
+			p.TemplateTag()
 		}
 
 	default:
@@ -2385,7 +2516,7 @@ func (s *TransformRuleContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *SQLParser) TransformRule() (localctx ITransformRuleContext) {
 	localctx = NewTransformRuleContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 36, SQLParserRULE_transformRule)
+	p.EnterRule(localctx, 38, SQLParserRULE_transformRule)
 
 	defer func() {
 		p.ExitRule()
@@ -2403,20 +2534,20 @@ func (p *SQLParser) TransformRule() (localctx ITransformRuleContext) {
 		}
 	}()
 
-	p.SetState(130)
+	p.SetState(138)
 	p.GetErrorHandler().Sync(p)
 	switch p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 6, p.GetParserRuleContext()) {
 	case 1:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(128)
+			p.SetState(136)
 			p.SpreadTransform()
 		}
 
 	case 2:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(129)
+			p.SetState(137)
 			p.StructSpreadTransform()
 		}
 
@@ -2497,7 +2628,7 @@ func (s *SpreadTransformContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *SQLParser) SpreadTransform() (localctx ISpreadTransformContext) {
 	localctx = NewSpreadTransformContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 38, SQLParserRULE_spreadTransform)
+	p.EnterRule(localctx, 40, SQLParserRULE_spreadTransform)
 
 	defer func() {
 		p.ExitRule()
@@ -2517,15 +2648,15 @@ func (p *SQLParser) SpreadTransform() (localctx ISpreadTransformContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(132)
+		p.SetState(140)
 		p.Match(SQLParserOB)
 	}
 	{
-		p.SetState(133)
+		p.SetState(141)
 		p.Match(SQLParserSPREAD)
 	}
 	{
-		p.SetState(134)
+		p.SetState(142)
 		p.Match(SQLParserCB)
 	}
 
@@ -2631,7 +2762,7 @@ func (s *StructTransformContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *SQLParser) StructTransform() (localctx IStructTransformContext) {
 	localctx = NewStructTransformContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 40, SQLParserRULE_structTransform)
+	p.EnterRule(localctx, 42, SQLParserRULE_structTransform)
 	var _la int
 
 	defer func() {
@@ -2654,46 +2785,46 @@ func (p *SQLParser) StructTransform() (localctx IStructTransformContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(136)
+		p.SetState(144)
 		p.Match(SQLParserOB)
 	}
 	{
-		p.SetState(137)
+		p.SetState(145)
 		p.Key()
 	}
-	p.SetState(142)
+	p.SetState(150)
 	p.GetErrorHandler().Sync(p)
 	_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 7, p.GetParserRuleContext())
 
 	for _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 		if _alt == 1 {
 			{
-				p.SetState(138)
+				p.SetState(146)
 				p.Match(SQLParserCOMMA)
 			}
 			{
-				p.SetState(139)
+				p.SetState(147)
 				p.Key()
 			}
 
 		}
-		p.SetState(144)
+		p.SetState(152)
 		p.GetErrorHandler().Sync(p)
 		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 7, p.GetParserRuleContext())
 	}
-	p.SetState(146)
+	p.SetState(154)
 	p.GetErrorHandler().Sync(p)
 	_la = p.GetTokenStream().LA(1)
 
 	if _la == SQLParserCOMMA {
 		{
-			p.SetState(145)
+			p.SetState(153)
 			p.Match(SQLParserCOMMA)
 		}
 
 	}
 	{
-		p.SetState(148)
+		p.SetState(156)
 		p.Match(SQLParserCB)
 	}
 
@@ -2782,7 +2913,7 @@ func (s *StructSpreadTransformContext) ExitRule(listener antlr.ParseTreeListener
 
 func (p *SQLParser) StructSpreadTransform() (localctx IStructSpreadTransformContext) {
 	localctx = NewStructSpreadTransformContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 42, SQLParserRULE_structSpreadTransform)
+	p.EnterRule(localctx, 44, SQLParserRULE_structSpreadTransform)
 
 	defer func() {
 		p.ExitRule()
@@ -2802,19 +2933,19 @@ func (p *SQLParser) StructSpreadTransform() (localctx IStructSpreadTransformCont
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(150)
+		p.SetState(158)
 		p.Match(SQLParserOB)
 	}
 	{
-		p.SetState(151)
+		p.SetState(159)
 		p.StructTransform()
 	}
 	{
-		p.SetState(152)
+		p.SetState(160)
 		p.Match(SQLParserSPREAD)
 	}
 	{
-		p.SetState(153)
+		p.SetState(161)
 		p.Match(SQLParserCB)
 	}
 
@@ -2912,7 +3043,7 @@ func (s *NotNullTransformContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *SQLParser) NotNullTransform() (localctx INotNullTransformContext) {
 	localctx = NewNotNullTransformContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 44, SQLParserRULE_notNullTransform)
+	p.EnterRule(localctx, 46, SQLParserRULE_notNullTransform)
 	var _la int
 
 	defer func() {
@@ -2935,36 +3066,36 @@ func (p *SQLParser) NotNullTransform() (localctx INotNullTransformContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(155)
+		p.SetState(163)
 		p.NotNullParam()
 	}
-	p.SetState(160)
+	p.SetState(168)
 	p.GetErrorHandler().Sync(p)
 	_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 9, p.GetParserRuleContext())
 
 	for _alt != 2 && _alt != antlr.ATNInvalidAltNumber {
 		if _alt == 1 {
 			{
-				p.SetState(156)
+				p.SetState(164)
 				p.Match(SQLParserCOMMA)
 			}
 			{
-				p.SetState(157)
+				p.SetState(165)
 				p.NotNullParam()
 			}
 
 		}
-		p.SetState(162)
+		p.SetState(170)
 		p.GetErrorHandler().Sync(p)
 		_alt = p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 9, p.GetParserRuleContext())
 	}
-	p.SetState(164)
+	p.SetState(172)
 	p.GetErrorHandler().Sync(p)
 	_la = p.GetTokenStream().LA(1)
 
 	if _la == SQLParserCOMMA {
 		{
-			p.SetState(163)
+			p.SetState(171)
 			p.Match(SQLParserCOMMA)
 		}
 
@@ -3037,7 +3168,7 @@ func (s *KeyContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *SQLParser) Key() (localctx IKeyContext) {
 	localctx = NewKeyContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 46, SQLParserRULE_key)
+	p.EnterRule(localctx, 48, SQLParserRULE_key)
 
 	defer func() {
 		p.ExitRule()
@@ -3057,7 +3188,7 @@ func (p *SQLParser) Key() (localctx IKeyContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(166)
+		p.SetState(174)
 		p.Match(SQLParserID)
 	}
 
@@ -3136,7 +3267,7 @@ func (s *NotNullParamContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *SQLParser) NotNullParam() (localctx INotNullParamContext) {
 	localctx = NewNotNullParamContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 48, SQLParserRULE_notNullParam)
+	p.EnterRule(localctx, 50, SQLParserRULE_notNullParam)
 
 	defer func() {
 		p.ExitRule()
@@ -3154,28 +3285,28 @@ func (p *SQLParser) NotNullParam() (localctx INotNullParamContext) {
 		}
 	}()
 
-	p.SetState(172)
+	p.SetState(180)
 	p.GetErrorHandler().Sync(p)
 	switch p.GetInterpreter().AdaptivePredict(p.GetTokenStream(), 11, p.GetParserRuleContext()) {
 	case 1:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(168)
+			p.SetState(176)
 			p.Match(SQLParserID)
 		}
 
 	case 2:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(169)
+			p.SetState(177)
 			p.Match(SQLParserID)
 		}
 		{
-			p.SetState(170)
+			p.SetState(178)
 			p.Match(SQLParserDOT)
 		}
 		{
-			p.SetState(171)
+			p.SetState(179)
 			p.Match(SQLParserID)
 		}
 
@@ -3248,7 +3379,7 @@ func (s *QueryNameContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *SQLParser) QueryName() (localctx IQueryNameContext) {
 	localctx = NewQueryNameContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 50, SQLParserRULE_queryName)
+	p.EnterRule(localctx, 52, SQLParserRULE_queryName)
 
 	defer func() {
 		p.ExitRule()
@@ -3268,7 +3399,7 @@ func (p *SQLParser) QueryName() (localctx IQueryNameContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(174)
+		p.SetState(182)
 		p.Match(SQLParserID)
 	}
 
@@ -3339,7 +3470,7 @@ func (s *ParamNameContext) ExitRule(listener antlr.ParseTreeListener) {
 
 func (p *SQLParser) ParamName() (localctx IParamNameContext) {
 	localctx = NewParamNameContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 52, SQLParserRULE_paramName)
+	p.EnterRule(localctx, 54, SQLParserRULE_paramName)
 
 	defer func() {
 		p.ExitRule()
@@ -3359,7 +3490,98 @@ func (p *SQLParser) ParamName() (localctx IParamNameContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(176)
+		p.SetState(184)
+		p.Match(SQLParserID)
+	}
+
+	return localctx
+}
+
+// ITemplateNameContext is an interface to support dynamic dispatch.
+type ITemplateNameContext interface {
+	antlr.ParserRuleContext
+
+	// GetParser returns the parser.
+	GetParser() antlr.Parser
+
+	// IsTemplateNameContext differentiates from other interfaces.
+	IsTemplateNameContext()
+}
+
+type TemplateNameContext struct {
+	*antlr.BaseParserRuleContext
+	parser antlr.Parser
+}
+
+func NewEmptyTemplateNameContext() *TemplateNameContext {
+	var p = new(TemplateNameContext)
+	p.BaseParserRuleContext = antlr.NewBaseParserRuleContext(nil, -1)
+	p.RuleIndex = SQLParserRULE_templateName
+	return p
+}
+
+func (*TemplateNameContext) IsTemplateNameContext() {}
+
+func NewTemplateNameContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *TemplateNameContext {
+	var p = new(TemplateNameContext)
+
+	p.BaseParserRuleContext = antlr.NewBaseParserRuleContext(parent, invokingState)
+
+	p.parser = parser
+	p.RuleIndex = SQLParserRULE_templateName
+
+	return p
+}
+
+func (s *TemplateNameContext) GetParser() antlr.Parser { return s.parser }
+
+func (s *TemplateNameContext) ID() antlr.TerminalNode {
+	return s.GetToken(SQLParserID, 0)
+}
+
+func (s *TemplateNameContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *TemplateNameContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
+	return antlr.TreesStringTree(s, ruleNames, recog)
+}
+
+func (s *TemplateNameContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(SQLParserListener); ok {
+		listenerT.EnterTemplateName(s)
+	}
+}
+
+func (s *TemplateNameContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(SQLParserListener); ok {
+		listenerT.ExitTemplateName(s)
+	}
+}
+
+func (p *SQLParser) TemplateName() (localctx ITemplateNameContext) {
+	localctx = NewTemplateNameContext(p, p.GetParserRuleContext(), p.GetState())
+	p.EnterRule(localctx, 56, SQLParserRULE_templateName)
+
+	defer func() {
+		p.ExitRule()
+	}()
+
+	defer func() {
+		if err := recover(); err != nil {
+			if v, ok := err.(antlr.RecognitionException); ok {
+				localctx.SetException(v)
+				p.GetErrorHandler().ReportError(p, v)
+				p.GetErrorHandler().Recover(p, v)
+			} else {
+				panic(err)
+			}
+		}
+	}()
+
+	p.EnterOuterAlt(localctx, 1)
+	{
+		p.SetState(186)
 		p.Match(SQLParserID)
 	}
 

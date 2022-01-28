@@ -30,6 +30,7 @@ MANY_TAG: '@many';
 EXEC_TAG: '@exec';
 NOT_NULL_PARAMS_TAG: '@notNullParams';
 RETURN_VALUE_NAME_TAG: '@returnValueName';
+TEMPLATE_TAG: '@template';
 OB: '(';
 CB: ')';
 DOT: '.';

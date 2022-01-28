@@ -38,13 +38,16 @@ notNullParamsTag: NOT_NULL_PARAMS_TAG notNullTransform;
 
 returnValueName: RETURN_VALUE_NAME_TAG returnValueNameId;
 
+templateTag: TEMPLATE_TAG templateName;
+
 anyTag:
 	nameTag
 	| paramTag
 	| paramStructNameTag
 	| modeTag
 	| notNullParamsTag
-	| returnValueName;
+	| returnValueName
+	| templateTag;
 
 transformRule: spreadTransform | structSpreadTransform;
 
@@ -62,4 +65,4 @@ notNullParam: ID | (ID DOT ID);
 
 queryName: ID;
 paramName: ID;
-
+templateName: ID;

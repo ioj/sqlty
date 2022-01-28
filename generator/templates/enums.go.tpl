@@ -8,7 +8,7 @@ type {{ $name }} string
 
   {{ $values := len .Values }}
   {{ if gt $values 0 }}
-    var (
+    const (
       {{ range .Values }}
         {{- $ident := valueToIdent . -}}
         {{ $name }}_{{ $ident }} {{ $name }} = "{{ . }}"
@@ -20,6 +20,13 @@ var {{ $name }}IdxMap = map[{{ $name }}]int{
   {{ range $idx, $val := .Values }}
     {{- $ident := valueToIdent . -}}
     {{ $name }}_{{ $ident }}: {{ $idx }},
+  {{ end }}
+}
+
+var {{ $name }}ByIdx = []{{ $name }}{
+  {{ range .Values }}
+    {{- $ident := valueToIdent . -}}
+    {{ $name }}_{{ $ident }},
   {{ end }}
 }
 

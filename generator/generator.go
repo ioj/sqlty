@@ -94,12 +94,6 @@ func New(templatedir string, cachedir string) (*Generator, error) {
 		return nil, err
 	}
 
-	// Check if the required template exists
-	t := g.tmpl.Lookup("query.go.tpl")
-	if t == nil {
-		return nil, errors.New("template not found: query.go.tpl")
-	}
-
 	g.cachedir = cachedir
 	g.cache, err = newCacheFromFile(cachedir)
 	if err != nil {
@@ -124,6 +118,11 @@ func (g *Generator) generate(fname string, template string, params interface{}) 
 		return err
 	}
 
+	tmpl := g.tmpl.Lookup(template)
+	if tmpl == nil {
+		return fmt.Errorf("template not found: %v", template)
+	}
+
 	if err := g.tmpl.Lookup(template).Execute(f, params); err != nil {
 		return err
 	}
@@ -131,12 +130,12 @@ func (g *Generator) generate(fname string, template string, params interface{}) 
 	return f.Close()
 }
 
-func (g *Generator) Query(fname string, q *stmt.Query) error {
+func (g *Generator) Query(templatename string, fname string, q *stmt.Query) error {
 	if q == nil {
 		return errors.New("query is required")
 	}
 
-	return g.generate(fname, "query.go.tpl", q)
+	return g.generate(fname, "query-"+templatename+".go.tpl", q)
 }
 
 func (g *Generator) Enums(pkgpath string, enums *stmt.Enums) error {

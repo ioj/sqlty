@@ -121,6 +121,16 @@ func (s *parserListener) EnterParamStructNameId(ctx *parser.ParamStructNameIdCon
 	}
 }
 
+// EnterTemplateName is called when production templateName is entered.
+func (s *parserListener) EnterTemplateName(ctx *parser.TemplateNameContext) {
+	t := newToken(ctx.BaseParserRuleContext)
+	if s.Query.template == nil {
+		s.Query.template = t
+	} else {
+		s.errors.AlreadyDeclaredError("template name", s.Query.template, t)
+	}
+}
+
 // EnterNotNullParam is called when production notNullParam is entered.
 func (s *parserListener) EnterNotNullParam(ctx *parser.NotNullParamContext) {
 	s.currentNotNull = append(s.currentNotNull, newToken(ctx.BaseParserRuleContext))

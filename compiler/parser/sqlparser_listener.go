@@ -59,6 +59,9 @@ type SQLParserListener interface {
 	// EnterReturnValueName is called when entering the returnValueName production.
 	EnterReturnValueName(c *ReturnValueNameContext)
 
+	// EnterTemplateTag is called when entering the templateTag production.
+	EnterTemplateTag(c *TemplateTagContext)
+
 	// EnterAnyTag is called when entering the anyTag production.
 	EnterAnyTag(c *AnyTagContext)
 
@@ -88,6 +91,9 @@ type SQLParserListener interface {
 
 	// EnterParamName is called when entering the paramName production.
 	EnterParamName(c *ParamNameContext)
+
+	// EnterTemplateName is called when entering the templateName production.
+	EnterTemplateName(c *TemplateNameContext)
 
 	// ExitInput is called when exiting the input production.
 	ExitInput(c *InputContext)
@@ -140,6 +146,9 @@ type SQLParserListener interface {
 	// ExitReturnValueName is called when exiting the returnValueName production.
 	ExitReturnValueName(c *ReturnValueNameContext)
 
+	// ExitTemplateTag is called when exiting the templateTag production.
+	ExitTemplateTag(c *TemplateTagContext)
+
 	// ExitAnyTag is called when exiting the anyTag production.
 	ExitAnyTag(c *AnyTagContext)
 
@@ -169,4 +178,7 @@ type SQLParserListener interface {
 
 	// ExitParamName is called when exiting the paramName production.
 	ExitParamName(c *ParamNameContext)
+
+	// ExitTemplateName is called when exiting the templateName production.
+	ExitTemplateName(c *TemplateNameContext)
 }

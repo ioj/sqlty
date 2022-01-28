@@ -110,7 +110,7 @@ func compiledir(cfg *config.Config) error {
 		fnameOut := strings.TrimSuffix(path.Base(fname), path.Ext(fname)) + ".gen.go"
 		fnameOut = path.Join(cfg.Paths.Output, fnameOut)
 
-		if err := gen.Query(fnameOut, stmtq); err != nil {
+		if err := gen.Query(q.Template(), fnameOut, stmtq); err != nil {
 			return err
 		}
 
