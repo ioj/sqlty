@@ -1,12 +1,15 @@
 package compiler
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gookit/color"
 )
+
+var ErrEmptyFile = errors.New("empty file")
 
 // ParserError is a syntax error reported by the parser or lexer,
 // or an annotation error.
@@ -69,6 +72,14 @@ func (el *errorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbo
 		msg:     msg,
 		line:    line,
 		column:  column,
+	})
+}
+
+func (el *errorListener) EmptyFileError() {
+	el.errors = append(el.errors, &ParserError{
+		fname:   el.fname,
+		errtype: "empty",
+		msg:     "empty file",
 	})
 }
 

@@ -21,6 +21,12 @@ func compile(fname string, input antlr.CharStream) (*Query, error) {
 
 	antlr.ParseTreeWalkerDefault.Walk(pl, p.Input())
 
+	for _, err := range pl.errors.errors {
+		if err.errtype == "empty" {
+			return nil, ErrEmptyFile
+		}
+	}
+
 	if pl.Query == nil {
 		return nil, nil
 	}

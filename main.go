@@ -82,6 +82,10 @@ func compiledir(cfg *config.Config) error {
 		t1 := time.Now()
 		q, err := compiler.CompileFile(fname)
 		if err != nil {
+			if err == compiler.ErrEmptyFile {
+				fmt.Printf("warn: %v is empty, ignoring\n", fname)
+				continue
+			}
 			return err
 		}
 

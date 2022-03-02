@@ -240,6 +240,11 @@ func (s *parserListener) EnterParamId(ctx *parser.ParamIdContext) {
 
 // EnterStatementBody is called when production statementBody is entered.
 func (s *parserListener) EnterStatementBody(ctx *parser.StatementBodyContext) {
+	if ctx.GetStop() == nil {
+		s.errors.EmptyFileError()
+		return
+	}
+
 	input := ctx.GetStart()
 	t := newToken(ctx.BaseParserRuleContext)
 	t.Value = input.GetInputStream().GetText(t.Start, t.Stop)
