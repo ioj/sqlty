@@ -52,6 +52,16 @@ package {{.PackageName}}
 {{- $returnNilValue := "nil" }}
 {{- $returnZeroValue := printf "&%v{}" .Returns.Name }}
 
+{{- if $returnsStruct -}}
+  {{- $returnType := printf "*%v" .Returns.Name }}
+  {{- $returnNilValue := "nil" }}
+  {{- $returnZeroValue := printf "&%v{}" .Returns.Name }}
+{{- else -}}
+  {{- $returnType = firstParamTypeName .Returns.Params -}}
+  {{- $returnNilValue = firstParamNilReturnValue .Returns.Params -}}
+  {{- $returnZeroValue = firstParamZeroReturnValue .Returns.Params -}}
+{{- end -}}
+
 {{- /* Render cursor structs */ -}}
 
 type {{ .Name }}Cursor struct {
@@ -242,7 +252,7 @@ func (db *DB) {{ .Name }}(ctx context.Context
 
   sqltyCursor.rows, err = db.tx.Query(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }})
   if err != nil {
-    return {{ $returnNilValue }}, err
+    return nil, err
   }
 
   return sqltyCursor, err

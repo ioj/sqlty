@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strings"
 	"text/template"
 
 	"github.com/ioj/sqlty/stmt"
@@ -76,6 +77,14 @@ var tmplfn = template.FuncMap{
 
 	"returnsInlineStruct": func(val *stmt.Query) bool {
 		return !val.Returns.IsCompositeType && len(val.Returns.Params) > 1 && val.ExecMode != stmt.ExecModeExec
+	},
+
+	"lowerFirstLetter": func(val string) string {
+		if val == "" {
+			return ""
+		}
+
+		return strings.ToLower(val[:1]) + val[1:]
 	},
 }
 

@@ -1,7 +1,8 @@
 {{ define "struct_declaration" }}
   type {{ .Name }} struct {
     {{ range .Params }}
-      {{ .Name }} {{ .Type.Name -}}
+      {{- $jsonTag := lowerFirstLetter .Name -}}
+      {{ .Name }} {{ .Type.Name }} `json:"{{ $jsonTag }}"`
     {{ end }}
   }
 {{ end }}
