@@ -95,9 +95,23 @@ types:
       nullable: true
 
   - name: pg_catalog.cidr
+    notNull: true
     to:
       name: net.IPNet
       zeroValue: "net.IPNet{}"
+      nullable: false
+
+  - name: pg_catalog.inet
+    to:
+      name: net.IP
+      zeroValue: "pgtype.Inet{}"
+      nullable: true
+
+  - name: pg_catalog.inet
+    notNull: true
+    to:
+      name: net.IP
+      zeroValue: "new(net.IP)"
       nullable: false
 
   - name: pg_catalog.int4
