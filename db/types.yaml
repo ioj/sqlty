@@ -23,9 +23,9 @@ types:
   - name: pg_catalog.bit
     notNull: false
     to:
-      name: "pgtype.Bit"
-      zeroValue: "pgtype.Bit{}"
-      nullable: false
+      name: "*pgtype.Bit"
+      zeroValue: "new(pgtype.Bit)"
+      nullable: true
 
   - name: pg_catalog.bytea
     notNull: true
