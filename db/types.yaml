@@ -13,6 +13,20 @@ types:
       zeroValue: "new(bool)"
       nullable: true
 
+  - name: pg_catalog.bit
+    notNull: true
+    to:
+      name: "pgtype.Bit"
+      zeroValue: "pgtype.Bit{}"
+      nullable: false
+
+  - name: pg_catalog.bit
+    notNull: false
+    to:
+      name: "*pgtype.Bit"
+      zeroValue: "new(pgtype.Bit)"
+      nullable: true
+
   - name: pg_catalog.bytea
     notNull: true
     to:
