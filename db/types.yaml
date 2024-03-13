@@ -153,6 +153,19 @@ types:
       name: "*int"
       zeroValue: "new(int)"
       nullable: true
+  
+  - name: pg_catalog.float4
+    notNull: true
+    to:
+      name: "float32"
+      zeroValue: "0.0"
+      nullable: false
+
+  - name: pg_catalog.float4
+    to:
+      name: "*float32"
+      zeroValue: "new(float32)"
+      nullable: true
 
   - name: pg_catalog.float8
     notNull: true
