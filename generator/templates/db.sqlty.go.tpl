@@ -49,10 +49,10 @@ func Middleware(db Beginner) func(http.Handler) http.Handler {
 			if err != nil {
 				panic("can't create transaction")
 			}
+			defer func() { _ = tx.Rollback(ctx) }()
 
 			r = r.WithContext(context.WithValue(ctx, ctxDBKey, tx))
 			next.ServeHTTP(w, r)
-			tx.Rollback(r.Context())
 		})
 	}
 }
