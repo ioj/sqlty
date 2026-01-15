@@ -4,10 +4,10 @@ package {{.PackageName}}
 
 import "github.com/jackc/pgx/v4"
 
-type ctxKey int
+type CtxKey int
 
 // Context keys for keeping useful stuff in the context.
-const ctxDBKey = ctxKey(23421)
+const CtxDBKey = CtxKey(23421)
 
 // Errors returned by generated functions.
 var (
@@ -51,7 +51,7 @@ func Middleware(db Beginner) func(http.Handler) http.Handler {
 			}
 			defer func() { _ = tx.Rollback(ctx) }()
 
-			r = r.WithContext(context.WithValue(ctx, ctxDBKey, tx))
+			r = r.WithContext(context.WithValue(ctx, CtxDBKey, tx))
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -59,7 +59,7 @@ func Middleware(db Beginner) func(http.Handler) http.Handler {
 
 // CtxTx returns a transaction assigned to the context.
 func CtxTx(ctx context.Context) (*DB, func(context.Context) error) {
-	tx, ok := ctx.Value(ctxDBKey).(pgx.Tx)
+	tx, ok := ctx.Value(CtxDBKey).(pgx.Tx)
 	if !ok {
 		panic("couldn't get a transaction from context. is middleware configured?")
 	}
