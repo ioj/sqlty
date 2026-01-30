@@ -3,7 +3,6 @@ module github.com/ioj/sqlty
 go 1.16
 
 require (
-	github.com/antlr/antlr4 v0.0.0-20200801005519-2ba38605b949
 	github.com/bradleyjkemp/cupaloy v2.3.0+incompatible
 	github.com/gookit/color v1.4.2
 	github.com/jackc/pgconn v1.10.0

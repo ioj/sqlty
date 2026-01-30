@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/ioj/sqlty/helpers"
 	"github.com/ioj/sqlty/stmt"
 	"github.com/serenize/snaker"
@@ -70,16 +69,6 @@ type Query struct {
 	statement *token
 }
 
-// newToken creates a new string with a location marker from the parser context.
-func newToken(ctx *antlr.BaseParserRuleContext) *token {
-	return &token{
-		Value:  ctx.GetText(),
-		Start:  ctx.GetStart().GetStart(),
-		Stop:   ctx.GetStop().GetStop(),
-		Line:   ctx.GetStart().GetLine(),
-		Column: ctx.GetStart().GetColumn(),
-	}
-}
 
 func (t *token) String() string {
 	if t == nil {

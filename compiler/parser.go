@@ -2,300 +2,596 @@ package compiler
 
 import (
 	"strings"
-
-	"github.com/ioj/sqlty/compiler/parser"
 )
 
-type parserListener struct {
-	*parser.BaseSQLParserListener
-
+// Parser parses SQL files with annotations.
+type Parser struct {
+	lexer    *Lexer
 	filename string
 	errors   *errorListener
+	input    string
 
-	Query *Query
+	current Token
+	peeked  bool
+	peekTok Token
 
+	query *Query
+
+	// Temporary state during parsing
 	currentParam           *Param
 	currentStructTransform []*StructKey
 	currentNotNull         []*token
 }
 
-// EnterQuery is called when a new query (annotations + the query itself) is encountered.
-func (s *parserListener) EnterQuery(ctx *parser.QueryContext) {
-	s.Query = &Query{
-		Filename: s.filename,
+// NewParser creates a new parser for the given input.
+func NewParser(filename string, input string) *Parser {
+	return &Parser{
+		lexer:    NewLexer(input),
+		filename: filename,
+		errors:   newErrorListener(filename),
+		input:    input,
+	}
+}
+
+// next returns the next token, consuming any peeked token first.
+func (p *Parser) next() Token {
+	if p.peeked {
+		p.peeked = false
+		p.current = p.peekTok
+		return p.current
+	}
+	p.current = p.lexer.NextToken()
+	return p.current
+}
+
+// makeToken converts a lexer Token to the legacy token type.
+func (p *Parser) makeToken(t Token) *token {
+	return &token{
+		Value:  t.Value,
+		Start:  t.Start,
+		Stop:   t.Stop,
+		Line:   t.Line,
+		Column: t.Column,
+	}
+}
+
+// Parse parses the input and returns a Query.
+func (p *Parser) Parse() (*Query, error) {
+	p.query = &Query{
+		Filename: p.filename,
 		paramIdx: make(map[ParamType]int),
 		params:   make(map[string]*Param),
 	}
-}
 
-// EnterParamTag is called the parser encounters the @param tag.
-func (s *parserListener) EnterParamTag(ctx *parser.ParamTagContext) {
-	t := newToken(ctx.BaseParserRuleContext)
-	s.currentParam = &Param{definition: t}
-}
+	// Get first token
+	p.next()
 
-// ExitParamTag is called when the parser leaves the '@param name -> ...' statement.
-func (s *parserListener) ExitParamTag(ctx *parser.ParamTagContext) {
-	// The current param is nil when it was already defined before.
-	if s.currentParam != nil {
-		lname := strings.ToLower(s.currentParam.definition.Value)
-		s.Query.params[lname] = s.currentParam
-		s.currentParam = nil
-	}
-}
-
-// EnterParamName is called when the parser processes @param name. It also checks
-// whether the name was already declared.
-func (s *parserListener) EnterParamName(ctx *parser.ParamNameContext) {
-	t := newToken(ctx.BaseParserRuleContext)
-	s.currentParam.definition.Value = t.Value
-	lname := strings.ToLower(s.currentParam.definition.Value)
-	if alreadyDefined, ok := s.Query.params[lname]; ok {
-		s.currentParam = nil
-		s.errors.AlreadyDeclaredError("parameter", alreadyDefined.definition, t)
-	}
-}
-
-// ExitSpreadTransform is called when production spreadTransform is exited.
-func (s *parserListener) ExitSpreadTransform(ctx *parser.SpreadTransformContext) {
-	if s.currentParam == nil {
-		return
+	// Check for annotation block
+	if p.current.Type != TokenOpenComment {
+		// No annotation block - return nil (not an annotated query)
+		return nil, nil
 	}
 
-	s.currentParam.Type = Spread
-	s.currentParam.Idx = s.Query.paramIdx[Spread]
-	s.Query.paramIdx[Spread]++
-}
-
-// ExitStructTransform is called when the parser has finished parsing the struct field
-// list. It happens in @param defined as a struct spread.
-func (s *parserListener) ExitStructTransform(ctx *parser.StructTransformContext) {
-	if s.currentParam == nil {
-		return
+	// Parse annotation block
+	if err := p.parseAnnotationBlock(); err != nil {
+		return nil, err
 	}
 
-	s.currentParam.keys = make(map[string]*StructKey)
+	// Parse optional line comments (docstrings)
+	p.parseLineComments()
 
-	for _, sk := range s.currentStructTransform {
-		lname := strings.ToLower(sk.token.Value)
-		_, ok := s.currentParam.keys[lname]
-		if ok {
-			s.errors.DuplicateStructKeyError(s.currentParam.definition.Value, sk.token)
-			continue
-		}
-
-		s.currentParam.keys[lname] = sk
+	// Parse statement body
+	if err := p.parseStatementBody(); err != nil {
+		return nil, err
 	}
 
-	s.currentStructTransform = nil
-}
+	// Run validation
+	p.checkUnusedParameters()
+	p.populateNotNullParams()
+	p.verifyExecMode()
 
-// ExitStructSpreadTransform is called when the parser finishes parsing of @param defined
-// as a struct spread.
-func (s *parserListener) ExitStructSpreadTransform(ctx *parser.StructSpreadTransformContext) {
-	if s.currentParam == nil {
-		return
+	if p.query == nil {
+		return nil, p.errors.Error()
 	}
 
-	s.currentParam.Type = StructSpread
-	s.currentParam.Idx = s.Query.paramIdx[StructSpread]
-	s.Query.paramIdx[StructSpread]++
-}
-
-// EnterKey is called when production key is entered.
-func (s *parserListener) EnterKey(ctx *parser.KeyContext) {
-	structkey := &StructKey{
-		token: newToken(ctx.BaseParserRuleContext),
-		idx:   len(s.currentStructTransform),
-	}
-	s.currentStructTransform = append(s.currentStructTransform, structkey)
-}
-
-// EnterParamStructNameId is called when production paramStructNameId is entered.
-func (s *parserListener) EnterParamStructNameId(ctx *parser.ParamStructNameIdContext) {
-	t := newToken(ctx.BaseParserRuleContext)
-	if s.Query.paramStructName == nil {
-		s.Query.paramStructName = t
-	} else {
-		s.errors.AlreadyDeclaredError("param struct name", s.Query.paramStructName, t)
-	}
-}
-
-// EnterTemplateName is called when production templateName is entered.
-func (s *parserListener) EnterTemplateName(ctx *parser.TemplateNameContext) {
-	t := newToken(ctx.BaseParserRuleContext)
-	if s.Query.template == nil {
-		s.Query.template = t
-	} else {
-		s.errors.AlreadyDeclaredError("template name", s.Query.template, t)
-	}
-}
-
-// EnterNotNullParam is called when production notNullParam is entered.
-func (s *parserListener) EnterNotNullParam(ctx *parser.NotNullParamContext) {
-	s.currentNotNull = append(s.currentNotNull, newToken(ctx.BaseParserRuleContext))
-}
-
-// ExitNotNullParamsTag is called when production notNullParamsTag is exited.
-func (s *parserListener) ExitNotNullParamsTag(ctx *parser.NotNullParamsTagContext) {
-	s.Query.notNullParams = s.currentNotNull
-	s.currentNotNull = nil
-}
-
-// EnterModeTag is called when production modeTag is entered.
-func (s *parserListener) EnterModeTag(ctx *parser.ModeTagContext) {
-	t := newToken(ctx.BaseParserRuleContext)
-	if s.Query.execMode == nil {
-		s.Query.execMode = t
-	} else {
-		s.errors.AlreadyDeclaredError("exec mode", s.Query.execMode, t)
-	}
-}
-
-// EnterQueryName is called when production queryName is entered.
-func (s *parserListener) EnterQueryName(ctx *parser.QueryNameContext) {
-	t := newToken(ctx.BaseParserRuleContext)
-	if s.Query.name == nil {
-		s.Query.name = t
-	} else {
-		s.errors.AlreadyDeclaredError("query name", s.Query.name, t)
-	}
-}
-
-// EnterReturnValueNameId is called when production returnValueNameId is entered.
-func (s *parserListener) EnterReturnValueNameId(ctx *parser.ReturnValueNameIdContext) {
-	t := newToken(ctx.BaseParserRuleContext)
-	if s.Query.returnValueName == nil {
-		s.Query.returnValueName = t
-	} else {
-		s.errors.AlreadyDeclaredError("return value name", s.Query.returnValueName, t)
-	}
-}
-
-// EnterLineComment is called when production lineComment is entered.
-func (s *parserListener) EnterLineComment(ctx *parser.LineCommentContext) {
-	if s.Query.statement != nil {
-		// Ignore this comment, as it's in the statement body. Only line comments
-		// before the query are treated as docstrings.
-		return
-	}
-
-	for _, c := range strings.Split(ctx.GetText(), "\n") {
-		if len(c) < 2 {
-			continue
-		}
-
-		line := c[2:]
-		if len(line) > 0 && line[0] == ' ' {
-			line = line[1:]
-		}
-		s.Query.Comments = append(s.Query.Comments, line)
-	}
-}
-
-// EnterWord is called when production word is entered.
-func (s *parserListener) EnterWord(ctx *parser.WordContext) {
-	t := ctx.GetText()
-	start := ctx.GetStart().GetStart()
-	offset := 0
-	for {
-		idx := strings.Index(t[offset:], "%")
-		if idx == -1 {
-			break
-		}
-		s.Query.percents = append(s.Query.percents, &token{
-			Start:  start + offset + idx,
-			Stop:   start + offset + idx,
-			Line:   ctx.GetStart().GetLine(),
-			Column: ctx.GetStart().GetColumn(),
-		})
-		offset += idx + 1
-		if offset >= len(t) {
-			break
-		}
-	}
-}
-
-// EnterParamId is called when :<name> is encountered inside the query.
-func (s *parserListener) EnterParamId(ctx *parser.ParamIdContext) {
-	t := newToken(ctx.BaseParserRuleContext)
-
-	input := ctx.GetStart()
-	name := input.GetInputStream().GetText(t.Start, t.Stop)
-	lname := strings.ToLower(name)
-
-	param, ok := s.Query.params[lname]
-	if ok {
-		param.uses = append(param.uses, t)
-	} else {
-		s.Query.params[lname] = &Param{
-			definition: &token{Value: name},
-			Idx:        s.Query.paramIdx[Scalar],
-			Type:       Scalar,
-			uses:       []*token{t},
-		}
-		s.Query.paramIdx[Scalar]++
-	}
-}
-
-// EnterStatementBody is called when production statementBody is entered.
-func (s *parserListener) EnterStatementBody(ctx *parser.StatementBodyContext) {
-	if ctx.GetStop() == nil {
-		s.errors.EmptyFileError()
-		return
-	}
-
-	input := ctx.GetStart()
-	t := newToken(ctx.BaseParserRuleContext)
-	t.Value = input.GetInputStream().GetText(t.Start, t.Stop)
-	s.Query.statement = t
-}
-
-func (s *parserListener) CheckUnusedParameters() error {
-	errors := false
-	for _, p := range s.Query.params {
-		if len(p.uses) == 0 {
-			errors = true
-			s.errors.UnusedParamError(p)
+	// Check for empty file error
+	for _, err := range p.errors.errors {
+		if err.errtype == "empty" {
+			return nil, ErrEmptyFile
 		}
 	}
 
-	if errors {
-		return s.errors.Error()
+	if err := p.errors.Error(); err != nil {
+		return nil, err
+	}
+
+	return p.query, nil
+}
+
+// parseAnnotationBlock parses the content between /* and */.
+func (p *Parser) parseAnnotationBlock() error {
+	// We've already consumed /*
+	p.next() // move past TokenOpenComment
+
+	// Parse tags until we hit */
+	for p.current.Type != TokenCloseComment && p.current.Type != TokenEOF {
+		if err := p.parseAnnotation(); err != nil {
+			return err
+		}
+	}
+
+	if p.current.Type == TokenCloseComment {
+		p.next() // consume */
 	}
 
 	return nil
 }
 
-func (s *parserListener) PopulateNotNullParams() {
-	for _, p := range s.Query.notNullParams {
-		segments := strings.SplitN(strings.ToLower(p.Value), ".", 2)
-		param, ok := s.Query.params[segments[0]]
+// parseAnnotation parses a single annotation tag.
+func (p *Parser) parseAnnotation() error {
+	switch p.current.Type {
+	case TokenAtName:
+		return p.parseNameTag()
+	case TokenAtParam:
+		return p.parseParamTag()
+	case TokenAtParamStructName:
+		return p.parseParamStructNameTag()
+	case TokenAtOne, TokenAtMany, TokenAtExec:
+		return p.parseModeTag()
+	case TokenAtNotNullParams:
+		return p.parseNotNullParamsTag()
+	case TokenAtReturnValueName:
+		return p.parseReturnValueNameTag()
+	case TokenAtTemplate:
+		return p.parseTemplateTag()
+	default:
+		// Skip unknown tokens (like @paramAsStruct which is ignored)
+		p.next()
+		return nil
+	}
+}
+
+// parseSimpleTag parses tags that expect a single identifier value.
+// It handles duplicate detection and error reporting.
+func (p *Parser) parseSimpleTag(dest **token, fieldName string) error {
+	p.next() // consume @tag
+
+	if p.current.Type != TokenIdentifier {
+		return nil
+	}
+
+	t := p.makeToken(p.current)
+	if *dest == nil {
+		*dest = t
+	} else {
+		p.errors.AlreadyDeclaredError(fieldName, *dest, t)
+	}
+
+	p.next()
+	return nil
+}
+
+// parseNameTag parses @name queryName.
+func (p *Parser) parseNameTag() error {
+	return p.parseSimpleTag(&p.query.name, "query name")
+}
+
+// parseParamTag parses @param name -> transform.
+func (p *Parser) parseParamTag() error {
+	paramStart := p.current
+	p.next() // consume @param
+
+	if p.current.Type != TokenIdentifier {
+		p.next()
+		return nil
+	}
+
+	// Create the param with definition token pointing to @param position
+	p.currentParam = &Param{
+		definition: p.makeToken(paramStart),
+	}
+
+	// Get the param name
+	nameToken := p.current
+	p.currentParam.definition.Value = nameToken.Value
+	p.currentParam.definition.Start = nameToken.Start
+	p.currentParam.definition.Stop = nameToken.Stop
+	p.currentParam.definition.Line = nameToken.Line
+	p.currentParam.definition.Column = nameToken.Column
+
+	// Check for duplicate
+	lname := strings.ToLower(nameToken.Value)
+	if alreadyDefined, ok := p.query.params[lname]; ok {
+		p.errors.AlreadyDeclaredError("parameter", alreadyDefined.definition, p.makeToken(nameToken))
+		p.currentParam = nil
+		p.next()
+		return nil
+	}
+
+	p.next() // consume name
+
+	// Expect ->
+	if p.current.Type != TokenArrow {
+		// No transform specified, might be an old/different syntax
+		// Add as scalar param
+		if p.currentParam != nil {
+			p.query.params[lname] = p.currentParam
+		}
+		p.currentParam = nil
+		return nil
+	}
+	p.next() // consume ->
+
+	// Parse transform
+	if err := p.parseTransform(); err != nil {
+		return err
+	}
+
+	// Add param to query
+	if p.currentParam != nil {
+		lname := strings.ToLower(p.currentParam.definition.Value)
+		p.query.params[lname] = p.currentParam
+		p.currentParam = nil
+	}
+
+	return nil
+}
+
+// parseTransform parses (...) or ((fields)...).
+func (p *Parser) parseTransform() error {
+	if p.current.Type != TokenOpenParen {
+		return nil
+	}
+	p.next() // consume (
+
+	// Check for struct spread: ((field1, field2)...)
+	if p.current.Type == TokenOpenParen {
+		return p.parseStructSpreadTransform()
+	}
+
+	// Simple spread: (...)
+	return p.parseSpreadTransform()
+}
+
+// parseSpreadTransform parses (...).
+func (p *Parser) parseSpreadTransform() error {
+	if p.current.Type != TokenSpread {
+		return nil
+	}
+	p.next() // consume ...
+
+	if p.current.Type == TokenCloseParen {
+		p.next() // consume )
+	}
+
+	if p.currentParam != nil {
+		p.currentParam.Type = Spread
+		p.currentParam.Idx = p.query.paramIdx[Spread]
+		p.query.paramIdx[Spread]++
+	}
+
+	return nil
+}
+
+// parseStructSpreadTransform parses ((field1, field2)...).
+func (p *Parser) parseStructSpreadTransform() error {
+	p.next() // consume inner (
+
+	// Parse field list
+	p.currentStructTransform = nil
+	for p.current.Type == TokenIdentifier {
+		structkey := &StructKey{
+			token: p.makeToken(p.current),
+			idx:   len(p.currentStructTransform),
+		}
+		p.currentStructTransform = append(p.currentStructTransform, structkey)
+		p.next() // consume identifier
+
+		if p.current.Type == TokenComma {
+			p.next() // consume ,
+		} else {
+			break
+		}
+	}
+
+	if p.current.Type == TokenCloseParen {
+		p.next() // consume inner )
+	}
+
+	if p.current.Type == TokenSpread {
+		p.next() // consume ...
+	}
+
+	if p.current.Type == TokenCloseParen {
+		p.next() // consume outer )
+	}
+
+	// Finalize struct transform
+	if p.currentParam != nil {
+		p.currentParam.keys = make(map[string]*StructKey)
+
+		for _, sk := range p.currentStructTransform {
+			lname := strings.ToLower(sk.token.Value)
+			if _, ok := p.currentParam.keys[lname]; ok {
+				p.errors.DuplicateStructKeyError(p.currentParam.definition.Value, sk.token)
+				continue
+			}
+			p.currentParam.keys[lname] = sk
+		}
+
+		p.currentParam.Type = StructSpread
+		p.currentParam.Idx = p.query.paramIdx[StructSpread]
+		p.query.paramIdx[StructSpread]++
+	}
+
+	p.currentStructTransform = nil
+	return nil
+}
+
+// parseParamStructNameTag parses @paramStructName name.
+func (p *Parser) parseParamStructNameTag() error {
+	return p.parseSimpleTag(&p.query.paramStructName, "param struct name")
+}
+
+// parseModeTag parses @one, @many, or @exec.
+func (p *Parser) parseModeTag() error {
+	t := p.makeToken(p.current)
+
+	if p.query.execMode == nil {
+		p.query.execMode = t
+	} else {
+		p.errors.AlreadyDeclaredError("exec mode", p.query.execMode, t)
+	}
+
+	p.next()
+	return nil
+}
+
+// parseNotNullParamsTag parses @notNullParams (param1, param2.field).
+func (p *Parser) parseNotNullParamsTag() error {
+	p.next() // consume @notNullParams
+
+	// Old syntax: @notNullParams (a, b, c)
+	// or just: @notNullParams a, b, c
+	if p.current.Type == TokenOpenParen {
+		p.next() // consume (
+	}
+
+	p.currentNotNull = nil
+	for p.current.Type == TokenIdentifier {
+		// Build the full name (could be param or param.field)
+		var fullName strings.Builder
+		start := p.current.Start
+		line := p.current.Line
+		col := p.current.Column
+
+		fullName.WriteString(p.current.Value)
+		p.next()
+
+		// Check for .field
+		if p.current.Type == TokenDot {
+			fullName.WriteString(".")
+			p.next() // consume .
+
+			if p.current.Type == TokenIdentifier {
+				fullName.WriteString(p.current.Value)
+				p.next()
+			}
+		}
+
+		p.currentNotNull = append(p.currentNotNull, &token{
+			Value:  fullName.String(),
+			Start:  start,
+			Stop:   start + len(fullName.String()) - 1,
+			Line:   line,
+			Column: col,
+		})
+
+		if p.current.Type == TokenComma {
+			p.next() // consume ,
+		} else {
+			break
+		}
+	}
+
+	if p.current.Type == TokenCloseParen {
+		p.next() // consume )
+	}
+
+	p.query.notNullParams = p.currentNotNull
+	p.currentNotNull = nil
+	return nil
+}
+
+// parseReturnValueNameTag parses @returnValueName name.
+func (p *Parser) parseReturnValueNameTag() error {
+	return p.parseSimpleTag(&p.query.returnValueName, "return value name")
+}
+
+// parseTemplateTag parses @template name.
+func (p *Parser) parseTemplateTag() error {
+	return p.parseSimpleTag(&p.query.template, "template name")
+}
+
+// parseLineComments collects line comments as docstrings.
+func (p *Parser) parseLineComments() {
+	for p.current.Type == TokenLineComment {
+		text := p.current.Value
+
+		// Process line comments, stripping -- prefix
+		for _, c := range strings.Split(text, "\n") {
+			if len(c) < 2 {
+				continue
+			}
+
+			line := c[2:] // strip --
+			if len(line) > 0 && line[0] == ' ' {
+				line = line[1:]
+			}
+			// Remove trailing \r if present
+			line = strings.TrimSuffix(line, "\r")
+			if line != "" || len(p.query.Comments) > 0 {
+				p.query.Comments = append(p.query.Comments, line)
+			}
+		}
+
+		p.next()
+	}
+}
+
+// parseStatementBody parses the SQL statement.
+func (p *Parser) parseStatementBody() error {
+	if p.current.Type == TokenEOF {
+		p.errors.EmptyFileError()
+		return nil
+	}
+
+	// Record start position
+	startPos := p.current.Start
+	startLine := p.current.Line
+	startCol := p.current.Column
+
+	// Collect all tokens until semicolon
+	var endPos int
+
+	for p.current.Type != TokenSemicolon && p.current.Type != TokenEOF {
+		// Track percent signs for sprintf escaping
+		if p.current.Type == TokenPercent {
+			p.query.percents = append(p.query.percents, &token{
+				Start:  p.current.Start,
+				Stop:   p.current.Stop,
+				Line:   p.current.Line,
+				Column: p.current.Column,
+			})
+		}
+
+		// Track parameters
+		if p.current.Type == TokenParamMark {
+			p.next()
+
+			if p.current.Type == TokenIdentifier {
+				p.trackParameter(p.current)
+			}
+			continue
+		}
+
+		// For words/strings, also scan for percent signs within the value
+		if p.current.Type == TokenWord || p.current.Type == TokenString || p.current.Type == TokenIdentifier {
+			p.scanForPercents(p.current)
+		}
+
+		endPos = p.current.Stop
+		p.next()
+	}
+
+	if p.current.Type == TokenSemicolon {
+		endPos = p.current.Start - 1
+	}
+
+	// Build statement token
+	if startPos <= endPos && endPos < len(p.input) {
+		statementText := p.input[startPos : endPos+1]
+		p.query.statement = &token{
+			Value:  statementText,
+			Start:  startPos,
+			Stop:   endPos,
+			Line:   startLine,
+			Column: startCol,
+		}
+	} else {
+		p.errors.EmptyFileError()
+	}
+
+	return nil
+}
+
+// scanForPercents scans a token's value for percent signs.
+func (p *Parser) scanForPercents(t Token) {
+	text := t.Value
+	offset := 0
+	for {
+		idx := strings.Index(text[offset:], "%")
+		if idx == -1 {
+			break
+		}
+		p.query.percents = append(p.query.percents, &token{
+			Start:  t.Start + offset + idx,
+			Stop:   t.Start + offset + idx,
+			Line:   t.Line,
+			Column: t.Column,
+		})
+		offset += idx + 1
+		if offset >= len(text) {
+			break
+		}
+	}
+}
+
+// trackParameter tracks a parameter usage in the SQL statement.
+func (p *Parser) trackParameter(ident Token) {
+	name := ident.Value
+	lname := strings.ToLower(name)
+
+	// Create token for the param identifier (not including the :)
+	t := &token{
+		Value:  name,
+		Start:  ident.Start,
+		Stop:   ident.Stop,
+		Line:   ident.Line,
+		Column: ident.Column,
+	}
+
+	param, ok := p.query.params[lname]
+	if ok {
+		param.uses = append(param.uses, t)
+	} else {
+		// Auto-create as scalar param
+		p.query.params[lname] = &Param{
+			definition: &token{Value: name},
+			Idx:        p.query.paramIdx[Scalar],
+			Type:       Scalar,
+			uses:       []*token{t},
+		}
+		p.query.paramIdx[Scalar]++
+	}
+}
+
+// checkUnusedParameters checks for declared but unused parameters.
+func (p *Parser) checkUnusedParameters() {
+	for _, param := range p.query.params {
+		if len(param.uses) == 0 {
+			p.errors.UnusedParamError(param)
+		}
+	}
+}
+
+// populateNotNullParams links not-null params to actual params.
+func (p *Parser) populateNotNullParams() {
+	for _, nnp := range p.query.notNullParams {
+		segments := strings.SplitN(strings.ToLower(nnp.Value), ".", 2)
+		param, ok := p.query.params[segments[0]]
 		if !ok {
-			s.errors.MissingParamError(p)
+			p.errors.MissingParamError(nnp)
 			continue
 		}
 
 		switch len(segments) {
 		case 1:
-			// This is 'plain' parameter
 			param.NotNull = true
 		case 2:
-			// This is struct field in the struct spread param
 			structkey, ok := param.keys[segments[1]]
 			if !ok {
-				s.errors.MissingParamError(p)
+				p.errors.MissingParamError(nnp)
 			} else {
 				structkey.NotNull = true
 			}
-		default:
-			panic("parser error")
 		}
 	}
 }
 
-func (s *parserListener) VerifyExecMode() {
-	if s.Query.execMode == nil {
-		s.errors.MissingExecModeError(s.Query.statement)
+// verifyExecMode checks that exec mode was specified.
+func (p *Parser) verifyExecMode() {
+	if p.query.execMode == nil && p.query.statement != nil {
+		p.errors.MissingExecModeError(p.query.statement)
 	}
 }

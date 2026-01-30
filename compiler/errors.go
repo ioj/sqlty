@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/gookit/color"
 )
 
@@ -28,8 +27,6 @@ type ErrCompilationFailed struct {
 }
 
 type errorListener struct {
-	*antlr.DefaultErrorListener
-
 	fname  string
 	errors []*ParserError
 }
@@ -65,7 +62,7 @@ func (e *ErrCompilationFailed) Error() string {
 }
 
 // SyntaxError handles syntax errors.
-func (el *errorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, line, column int, msg string, e antlr.RecognitionException) {
+func (el *errorListener) SyntaxError(line, column int, msg string) {
 	el.errors = append(el.errors, &ParserError{
 		fname:   el.fname,
 		errtype: "syntax",

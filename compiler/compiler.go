@@ -1,62 +1,21 @@
 package compiler
 
 import (
-	"github.com/antlr/antlr4/runtime/Go/antlr"
-	"github.com/ioj/sqlty/compiler/parser"
+	"os"
 )
 
-func compile(fname string, input antlr.CharStream) (*Query, error) {
-	pl := &parserListener{
-		filename: fname,
-		errors:   newErrorListener(fname),
-	}
-
-	lexer := parser.NewSQLLexer(input)
-	stream := antlr.NewCommonTokenStream(lexer, 0)
-	p := parser.NewSQLParser(stream)
-	p.RemoveErrorListeners()
-	// p.AddErrorListener(antlr.NewDiagnosticErrorListener(true))
-	p.AddErrorListener(pl.errors)
-	p.BuildParseTrees = true
-
-	antlr.ParseTreeWalkerDefault.Walk(pl, p.Input())
-
-	for _, err := range pl.errors.errors {
-		if err.errtype == "empty" {
-			return nil, ErrEmptyFile
-		}
-	}
-
-	if pl.Query == nil {
-		return nil, nil
-	}
-
-	pl.CheckUnusedParameters()
-	pl.PopulateNotNullParams()
-	pl.VerifyExecMode()
-
-	// fmt.Println(pl.Query.DebugString())
-
-	if err := pl.errors.Error(); err != nil {
-		return nil, err
-	}
-
-	return pl.Query, nil
-}
-
-// CompileFile returns the list of compiled queries based on contents of a file.
+// CompileFile returns the compiled query based on contents of a file.
 func CompileFile(fname string) (*Query, error) {
-	input, err := antlr.NewFileStream(fname)
+	data, err := os.ReadFile(fname)
 	if err != nil {
 		return nil, err
 	}
 
-	return compile(fname, input)
+	return CompileString(fname, string(data))
 }
 
-// CompileString returns the list of compiled queries based on the input provided
-// as a string.
+// CompileString returns the compiled query based on the input provided as a string.
 func CompileString(defaultQueryName string, data string) (*Query, error) {
-	input := antlr.NewInputStream(data)
-	return compile(defaultQueryName, input)
+	p := NewParser(defaultQueryName, data)
+	return p.Parse()
 }
