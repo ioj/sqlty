@@ -236,6 +236,11 @@ func (q *Query) Statement() string {
 		}
 	}
 
+	// If no replacements needed, return original statement
+	if len(reps) == 0 {
+		return q.statement.Value
+	}
+
 	sort.Slice(reps, func(i, j int) bool {
 		return reps[i].t.Start < reps[j].t.Start
 	})
@@ -247,6 +252,12 @@ func (q *Query) Statement() string {
 	orig := q.statement.Value
 
 	offset := reps[0].t.Start - origstart
+	if offset < 0 {
+		offset = 0
+	}
+	if offset > len(orig) {
+		offset = len(orig)
+	}
 	stmt.WriteString(orig[0:offset])
 
 	// insert all replacements
@@ -254,6 +265,9 @@ func (q *Query) Statement() string {
 		stmt.WriteString(r.r)
 
 		offset = r.t.Stop - origstart + 2
+		if offset < 0 {
+			offset = 0
+		}
 
 		var next int
 		if n == len(reps)-1 {
@@ -264,6 +278,17 @@ func (q *Query) Statement() string {
 			// otherwise, write the statement up to the next
 			// replacement and do next iteration
 			next = reps[n+1].t.Start - origstart
+		}
+
+		// Ensure bounds are valid
+		if offset > len(orig) {
+			offset = len(orig)
+		}
+		if next > len(orig) {
+			next = len(orig)
+		}
+		if offset > next {
+			offset = next
 		}
 
 		stmt.WriteString(orig[offset:next])
@@ -303,6 +328,15 @@ func (q *Query) PreparedQuery() string {
 // StmtQuery returns a stmt.Query based on internal values and type resolutions for arguments
 // and return values provided in parameters.
 func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns *stmt.Struct) (*stmt.Query, error) {
+	// Validate that ptypes count matches expected parameter count
+	expectedTypes := len(q.Params(Scalar)) + len(q.Params(Spread))
+	for _, ss := range q.Params(StructSpread) {
+		expectedTypes += len(ss.Keys())
+	}
+	if len(ptypes) != expectedTypes {
+		return nil, fmt.Errorf("type count mismatch: expected %d parameters, got %d types", expectedTypes, len(ptypes))
+	}
+
 	stmtq := &stmt.Query{
 		PackageName: packageName,
 		Statement:   q.Statement(),

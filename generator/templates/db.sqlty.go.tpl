@@ -5,6 +5,7 @@ package {{.PackageName}}
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -21,6 +22,7 @@ var (
 	ErrNilArgs               = errors.New("args are nil")
 	ErrEmptySpread           = errors.New("spread is empty")
 	ErrEmptyStructSpreadList = errors.New("struct spread list is empty")
+	ErrNoTransaction         = errors.New("no transaction in context")
 )
 
 // Txer defines an interface allowing to query database. It's compatible with
@@ -54,7 +56,9 @@ func Middleware(db Beginner) func(http.Handler) http.Handler {
 			ctx := r.Context()
 			tx, err := db.Begin(ctx)
 			if err != nil {
-				panic("can't create transaction")
+				log.Printf("sqlty: failed to begin transaction: %v", err)
+				http.Error(w, "Database unavailable", http.StatusServiceUnavailable)
+				return
 			}
 			defer func() { _ = tx.Rollback(ctx) }()
 
@@ -65,13 +69,24 @@ func Middleware(db Beginner) func(http.Handler) http.Handler {
 }
 
 // CtxTx returns a transaction assigned to the context.
-func CtxTx(ctx context.Context) (*DB, func(context.Context) error) {
+// Returns an error if no transaction is found in the context.
+func CtxTx(ctx context.Context) (*DB, func(context.Context) error, error) {
 	tx, ok := ctx.Value(CtxDBKey).(pgx.Tx)
 	if !ok {
-		panic("couldn't get a transaction from context. is middleware configured?")
+		return nil, nil, ErrNoTransaction
 	}
 
-	return New(tx), tx.Commit
+	return New(tx), tx.Commit, nil
+}
+
+// MustCtxTx returns a transaction assigned to the context.
+// Panics if no transaction is found (use CtxTx for error handling).
+func MustCtxTx(ctx context.Context) (*DB, func(context.Context) error) {
+	db, commit, err := CtxTx(ctx)
+	if err != nil {
+		panic("sqlty: " + err.Error() + ". Is middleware configured?")
+	}
+	return db, commit
 }
 
 // PGErrCode returns the 5-character error code returned by postgresql,
