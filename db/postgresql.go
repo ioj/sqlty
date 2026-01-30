@@ -7,15 +7,12 @@ import (
 	"strings"
 
 	"github.com/ioj/sqlty/stmt"
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 type Resolver struct {
-	ctx  context.Context
-	conn *pgconn.PgConn
-	db   *pgx.Conn
-
+	ctx   context.Context
+	conn  *pgx.Conn
 	types *pgTypes
 }
 
@@ -29,29 +26,17 @@ func NewResolver(ctx context.Context, connString string, types []PGTypeTranslati
 	var err error
 
 	r := &Resolver{ctx: ctx}
-	r.conn, err = pgconn.Connect(r.ctx, connString)
+	r.conn, err = pgx.Connect(r.ctx, connString)
 	if err != nil {
 		return nil, err
 	}
 
-	r.db, err = pgx.Connect(r.ctx, connString)
-	if err != nil {
-		return nil, err
-	}
-
-	r.types, err = newPgTypes(ctx, r.db, types)
+	r.types, err = newPgTypes(ctx, r.conn, types)
 	return r, err
 }
 
 func (r *Resolver) Close() error {
-	dberr := r.db.Close(r.ctx)
-	connerr := r.conn.Close(r.ctx)
-
-	if dberr != nil {
-		return dberr
-	}
-
-	return connerr
+	return r.conn.Close(r.ctx)
 }
 
 func (r *Resolver) Enums() []*stmt.Enum {
@@ -79,7 +64,7 @@ func (r *Resolver) getNullableAttrs(ctx context.Context, attrs []*pgAttr) error 
 			AND (attrelid, attnum) IN (%v)
 		`, strings.Join(params, ","))
 
-	rows, err := r.db.Query(ctx, stmt)
+	rows, err := r.conn.Query(ctx, stmt)
 	if err != nil {
 		return err
 	}
@@ -94,6 +79,10 @@ func (r *Resolver) getNullableAttrs(ctx context.Context, attrs []*pgAttr) error 
 		notnullmap[a] = true
 	}
 
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
 	for _, a := range attrs {
 		if _, ok := notnullmap[*a]; ok {
 			a.notnull = true
@@ -104,7 +93,7 @@ func (r *Resolver) getNullableAttrs(ctx context.Context, attrs []*pgAttr) error 
 }
 
 func (r *Resolver) ResolveTypes(ctx context.Context, query string, notnulls []bool) ([]stmt.Type, *stmt.Struct, error) {
-	res, err := r.conn.Prepare(ctx, "", query, nil)
+	res, err := r.conn.PgConn().Prepare(ctx, "", query, nil)
 	if err != nil {
 		return nil, nil, err
 	}

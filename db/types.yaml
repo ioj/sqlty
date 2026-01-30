@@ -16,15 +16,15 @@ types:
   - name: pg_catalog.bit
     notNull: true
     to:
-      name: "pgtype.Bit"
-      zeroValue: "pgtype.Bit{}"
+      name: "pgtype.Bits"
+      zeroValue: "pgtype.Bits{}"
       nullable: false
 
   - name: pg_catalog.bit
     notNull: false
     to:
-      name: "*pgtype.Bit"
-      zeroValue: "new(pgtype.Bit)"
+      name: "pgtype.Bits"
+      zeroValue: "pgtype.Bits{}"
       nullable: true
 
   - name: pg_catalog.bytea
@@ -104,28 +104,28 @@ types:
 
   - name: pg_catalog.cidr
     to:
-      name: "pgtype.CIDR"
-      zeroValue: "pgtype.CIDR{}"
+      name: "netip.Prefix"
+      zeroValue: "netip.Prefix{}"
       nullable: true
 
   - name: pg_catalog.cidr
     notNull: true
     to:
-      name: net.IPNet
-      zeroValue: "net.IPNet{}"
+      name: "netip.Prefix"
+      zeroValue: "netip.Prefix{}"
       nullable: false
 
   - name: pg_catalog.inet
     to:
-      name: pgtype.Inet
-      zeroValue: "pgtype.Inet{}"
+      name: "netip.Addr"
+      zeroValue: "netip.Addr{}"
       nullable: true
 
   - name: pg_catalog.inet
     notNull: true
     to:
-      name: pgtype.Inet
-      zeroValue: "pgtype.Inet{}"
+      name: "netip.Addr"
+      zeroValue: "netip.Addr{}"
       nullable: false
 
   - name: pg_catalog.int4
@@ -202,9 +202,9 @@ types:
 
   - name: pg_catalog.timestamptz
     to:
-      name: "pgtype.Timestamp"
-      zeroValue: "pgtype.Timestamp{}"
-      nullable: false
+      name: "pgtype.Timestamptz"
+      zeroValue: "pgtype.Timestamptz{}"
+      nullable: true
 
   - name: pg_catalog.interval
     notNull: true
@@ -228,15 +228,15 @@ types:
 
   - name: pg_catalog.json
     to:
-      name: "pgtype.JSON"
-      zeroValue: "pgtype.JSON{}"
-      nullable: false
+      name: "[]byte"
+      zeroValue: "[]byte{}"
+      nullable: true
 
   - name: pg_catalog.jsonb
     to:
-      name: "pgtype.JSONB"
-      zeroValue: "pgtype.JSONB{}"
-      nullable: false
+      name: "[]byte"
+      zeroValue: "[]byte{}"
+      nullable: true
 
   - name: pg_catalog.oid
     notNull: true
@@ -247,20 +247,20 @@ types:
 
   - name: pg_catalog.oid
     to:
-      name: "pgtype.OID"
-      zeroValue: "pgtype.OID{}"
+      name: "uint32"
+      zeroValue: "0"
       nullable: false
 
   - name: pg_catalog.cid
     to:
-      name: "pgtype.CID"
-      zeroValue: "pgtype.CID{}"
+      name: "uint32"
+      zeroValue: "0"
       nullable: false
 
   - name: pg_catalog.xid
     to:
-      name: "pgtype.XID"
-      zeroValue: "pgtype.XID{}"
+      name: "uint32"
+      zeroValue: "0"
       nullable: false
 
   - name: pg_catalog.tid

@@ -161,12 +161,12 @@ func (g *Generator) Enums(pkgpath string, enums *stmt.Enums) error {
 func (g *Generator) CompositeTypes(pkgpath string, types *stmt.CompositeTypes) error {
 	fname := path.Join(pkgpath, "composite_types.sqlty.gen.go")
 	if types == nil || len(types.Types) == 0 {
-		// Remove the file if there are no custom enums
+		// Remove the file if there are no composite types
 		os.Remove(fname)
 		return nil
 	}
 
-	return g.generate(fname, "enums.go.tpl", types)
+	return g.generate(fname, "composite_types.go.tpl", types)
 }
 
 func (g *Generator) DB(pkgpath string, db *stmt.DB) error {

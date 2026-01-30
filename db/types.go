@@ -8,7 +8,7 @@ import (
 
 	"github.com/ioj/sqlty/helpers"
 	"github.com/ioj/sqlty/stmt"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/serenize/snaker"
 )
 

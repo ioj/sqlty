@@ -2,7 +2,14 @@
 
 package {{.PackageName}}
 
-import "github.com/jackc/pgx/v4"
+import (
+	"context"
+	"errors"
+	"net/http"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+)
 
 type CtxKey int
 
@@ -19,9 +26,9 @@ var (
 // Txer defines an interface allowing to query database. It's compatible with
 // both pgx.Conn and pgxpool.Tx
 type Txer interface {
-	Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error)
-	Query(context.Context, string, ...interface{}) (pgx.Rows, error)
-	QueryRow(context.Context, string, ...interface{}) pgx.Row
+	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+	Query(context.Context, string, ...any) (pgx.Rows, error)
+	QueryRow(context.Context, string, ...any) pgx.Row
 }
 
 // Beginner is compatible with pgx.Conn and pgxpool.Pool
@@ -74,10 +81,10 @@ func PGErrCode(err error) string {
 		return ""
 	}
 
-	pgerr, ok := err.(*pgconn.PgError)
-	if !ok {
-		return ""
+	var pgerr *pgconn.PgError
+	if errors.As(err, &pgerr) {
+		return pgerr.Code
 	}
 
-	return pgerr.Code
+	return ""
 }
