@@ -1,32 +1,55 @@
 # SQLty
 
-SQLty is a SQL code generator for Go that transforms annotated SQL query files into type-safe Go functions. It connects to a PostgreSQL database to resolve parameter and return types, then generates Go code with compile-time type safety.
+**Type-safe SQL for Go.** Write raw SQL, get fully typed Go functions.
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/ioj/sqlty.svg)](https://pkg.go.dev/github.com/ioj/sqlty)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ioj/sqlty)](https://goreportcard.com/report/github.com/ioj/sqlty)
+
+---
+
+## Why SQLty?
+
+```sql
+/* @name GetUserByEmail @one */
+SELECT id, email, created_at FROM users WHERE email = :email;
+```
+
+⬇️ generates
+
+```go
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (*GetUserByEmailRow, error)
+
+type GetUserByEmailRow struct {
+    ID        int64
+    Email     string
+    CreatedAt time.Time
+}
+```
+
+**No ORMs. No schema mapping. No runtime reflection.** SQLty connects to your PostgreSQL database, resolves types from the actual schema, and generates compile-time safe Go code.
+
+---
 
 ## Features
 
-- **Type-safe SQL**: Generate Go functions with proper types resolved from your PostgreSQL schema
-- **Multiple execution modes**: `@one` (single row), `@many` (multiple rows), `@exec` (no return)
-- **Cursor support**: Stream large result sets with lazy evaluation
-- **Composite types**: Full support for PostgreSQL composite/row types
-- **Enum types**: Automatic Go enum generation from PostgreSQL enums
-- **Spread parameters**: Expand arrays into query parameters (`:ids...`)
-- **Struct spread**: Bulk insert support with struct arrays
+- **Type-safe queries** — Parameters and return types resolved from your live database schema
+- **Multiple execution modes** — `@one`, `@many`, `@exec`, and `@cursor` for streaming
+- **PostgreSQL native** — Full support for enums, composite types, arrays, and JSON
+- **Spread parameters** — Expand slices into `IN` clauses with `:ids...`
+- **Bulk inserts** — Struct spread for inserting multiple rows in one query
+- **Incremental builds** — Only regenerate changed queries
 
-## Requirements
+---
 
-- Go 1.21+
-- PostgreSQL database
-- `goimports` (automatically run on generated code)
+## Quick Start
 
-## Installation
+**Install:**
 
 ```bash
 go install github.com/ioj/sqlty@latest
 ```
 
-## Usage
-
-1. Create a `sqlty.yaml` configuration file:
+**Configure** `sqlty.yaml`:
 
 ```yaml
 dburl: postgres://user:pass@localhost:5432/mydb
@@ -36,243 +59,94 @@ paths:
 package: db
 ```
 
-2. Write annotated SQL files in your source directory:
+**Write SQL** in `queries/users.sql`:
 
 ```sql
-/* @name GetUser
-   @one
-*/
-SELECT id, email, name FROM users WHERE id = :userId;
+/* @name ListActiveUsers @many */
+SELECT id, email, name
+FROM users
+WHERE active = true
+ORDER BY created_at DESC;
 
-/* @name ListUsers
-   @many
-*/
-SELECT id, email, name FROM users ORDER BY id;
-
-/* @name CreateUser
-   @exec
-*/
+/* @name CreateUser @exec */
 INSERT INTO users (email, name) VALUES (:email, :name);
+
+/* @name GetUsersByIDs @many */
+SELECT * FROM users WHERE id IN (:ids...);
 ```
 
-3. Run SQLty:
+**Generate:**
 
 ```bash
 sqlty
 ```
 
-4. Use the generated code:
+**Use:**
 
 ```go
-import "yourproject/db"
+package main
+
+import (
+    "context"
+    "yourproject/db"
+    "github.com/jackc/pgx/v5"
+)
 
 func main() {
-    conn, _ := pgx.Connect(ctx, connString)
-    queries := db.New(conn)
+    conn, _ := pgx.Connect(context.Background(), connString)
+    q := db.New(conn)
 
-    user, err := queries.GetUser(ctx, 123)
-    users, err := queries.ListUsers(ctx)
+    // Fully typed - IDE autocomplete works
+    users, _ := q.ListActiveUsers(ctx)
+
+    // Spread parameters expand automatically
+    users, _ = q.GetUsersByIDs(ctx, []int64{1, 2, 3})
+
+    // Transactions via context
+    tx, _ := conn.Begin(ctx)
+    ctx = context.WithValue(ctx, db.CtxDBKey, tx)
+    q.CreateUser(ctx, "alice@example.com", "Alice")
+    tx.Commit(ctx)
 }
 ```
 
-## SQL Annotations
+---
+
+## Annotation Reference
 
 | Annotation | Description |
 |------------|-------------|
-| `@name queryName` | Name of the generated Go function |
-| `@one` | Returns a single row (uses `CollectOneRow`) |
-| `@many` | Returns multiple rows (uses `CollectRows`) |
-| `@exec` | No return value (INSERT/UPDATE/DELETE) |
-| `@param name -> type` | Override parameter type |
-| `@notNull paramName` | Mark parameter as non-nullable |
-| `@template templateName` | Use custom template (e.g., `cursor`) |
-| `@return StructName` | Custom name for return struct |
-
-## Generated Output
-
-SQLty generates the following files:
-
-- `{query_name}.gen.go` - Query functions
-- `enums.sqlty.gen.go` - PostgreSQL enum types
-- `composite_types.sqlty.gen.go` - Composite/row types
-- `db.sqlty.gen.go` - DB struct and utilities
+| `@name Name` | Generated function name |
+| `@one` | Returns single row |
+| `@many` | Returns slice of rows |
+| `@exec` | No return value |
+| `@template cursor` | Streaming cursor for large result sets |
+| `@param p -> type` | Override parameter type (e.g., `scalar`, `spread`) |
+| `@notNull p` | Mark nullable column as non-null |
+| `@return Name` | Custom return struct name |
 
 ---
 
-## pgx v5 Migration (v2.0)
+## Generated Files
 
-SQLty has been upgraded from pgx/v4 to pgx/v5, bringing significant improvements to the generated code and type system.
-
-### Breaking Changes
-
-- **Minimum Go version**: Now requires Go 1.21+
-- **Type mappings changed**:
-  - JSON/JSONB: `pgtype.JSON`/`pgtype.JSONB` → `[]byte`
-  - Network types: `pgtype.CIDR`/`pgtype.Inet` → `netip.Prefix`/`netip.Addr`
-  - Bit type: `pgtype.Bit` → `pgtype.Bits`
-- **Removed DecodeBinary**: Composite types now use pgx v5's native struct scanning
-
-### New Features
-
-#### CollectRows Helper
-
-`@many` queries now use pgx v5's `CollectRows` for cleaner, more efficient code:
-
-```go
-// Before (v4)
-rows, err := db.tx.Query(ctx, stmt, args...)
-defer rows.Close()
-var results []*User
-for rows.Next() {
-    r := &User{}
-    if err := rows.Scan(&r.Id, &r.Email); err != nil {
-        return nil, err
-    }
-    results = append(results, r)
-}
-return results, rows.Err()
-
-// After (v5)
-rows, err := db.tx.Query(ctx, stmt, args...)
-if err != nil {
-    return nil, err
-}
-return pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[User])
 ```
-
-#### CollectOneRow Helper
-
-`@one` queries use `CollectOneRow` for simpler single-row retrieval:
-
-```go
-// Before (v4)
-result := &User{}
-err := db.tx.QueryRow(ctx, stmt, args...).Scan(&result.Id, &result.Email)
-
-// After (v5)
-rows, err := db.tx.Query(ctx, stmt, args...)
-if err != nil {
-    return nil, err
-}
-return pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByPos[User])
+db/
+├── get_user_by_email.gen.go    # Query functions
+├── list_active_users.gen.go
+├── enums.sqlty.gen.go          # PostgreSQL enums → Go types
+├── composite_types.sqlty.gen.go # Row/composite types
+└── db.sqlty.gen.go             # Queries struct & helpers
 ```
-
-#### Simplified Connection
-
-Internal type resolution now uses a single `pgx.Conn` instead of separate pgconn and pgx connections.
-
-#### Modern Error Handling
-
-Error code extraction uses the `errors.As` pattern:
-
-```go
-func PGErrCode(err error) string {
-    var pgerr *pgconn.PgError
-    if errors.As(err, &pgerr) {
-        return pgerr.Code
-    }
-    return ""
-}
-```
-
-### Type Mapping Changes
-
-| PostgreSQL Type | v4 Go Type | v5 Go Type |
-|-----------------|------------|------------|
-| `json` | `pgtype.JSON` | `[]byte` |
-| `jsonb` | `pgtype.JSONB` | `[]byte` |
-| `cidr` | `pgtype.CIDR` / `net.IPNet` | `netip.Prefix` |
-| `inet` | `pgtype.Inet` | `netip.Addr` |
-| `bit` | `pgtype.Bit` | `pgtype.Bits` |
-| `timestamptz` (nullable) | `pgtype.Timestamp` | `pgtype.Timestamptz` |
-| `oid`, `cid`, `xid` | `pgtype.OID`, etc. | `uint32` |
-
-### Cursor Queries
-
-Cursor queries (`@template cursor`) continue to use manual iteration since they require lazy evaluation:
-
-```go
-cursor, err := queries.ListUsersCursor(ctx)
-if err != nil {
-    return err
-}
-defer cursor.Close()
-
-for cursor.Next() {
-    user, err := cursor.Scan()
-    if err != nil {
-        return err
-    }
-    // Process user...
-}
-return cursor.Err()
-```
-
-### Migration Guide
-
-1. **Update your Go version** to 1.21 or later
-
-2. **Update dependencies**:
-   ```bash
-   go get github.com/ioj/sqlty@latest
-   go mod tidy
-   ```
-
-3. **Regenerate code**:
-   ```bash
-   sqlty
-   ```
-
-4. **Update imports** in your code if you were using pgtype types directly:
-   ```go
-   // Before
-   import "github.com/jackc/pgtype"
-
-   // After
-   import "github.com/jackc/pgx/v5/pgtype"
-   ```
-
-5. **Update type usage** for changed mappings:
-   ```go
-   // JSON handling - now []byte
-   var data []byte
-   err := json.Unmarshal(row.JsonColumn, &myStruct)
-
-   // Network types - now netip
-   import "net/netip"
-   var addr netip.Addr
-   var prefix netip.Prefix
-   ```
 
 ---
 
-## Configuration
+## Requirements
 
-Create `sqlty.yaml` in your project root:
+- Go 1.21+
+- PostgreSQL
+- pgx/v5
 
-```yaml
-# Database connection string (required)
-dburl: postgres://user:pass@localhost:5432/mydb
-
-# File paths
-paths:
-  source: ./queries    # SQL files location
-  output: ./db         # Generated Go files location
-  cache: .sqlty        # Cache directory for incremental builds
-  templates: ""        # Custom templates directory (optional)
-
-# Package name for generated code
-package: db
-
-# Custom type mappings (optional)
-types:
-  - name: pg_catalog.money
-    notNull: true
-    to:
-      name: "decimal.Decimal"
-      zeroValue: "decimal.Decimal{}"
-      nullable: false
-```
+---
 
 ## License
 
