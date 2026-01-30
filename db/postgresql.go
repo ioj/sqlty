@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -147,17 +148,17 @@ func (r *Resolver) ResolveTypes(ctx context.Context, query string, notnulls []bo
 		case err == nil:
 			// It's just a normal return type.
 			return params, &stmt.Struct{Params: []stmt.Param{{Name: string(f.Name), Type: *gotype}}}, nil
-		case err == errVoid:
+		case errors.Is(err, errVoid):
 			// Query returns void.
 			return params, nil, nil
-		case err == errComposite:
+		case errors.Is(err, errComposite):
 			// Query returns a composite type.
 			returns, err := r.types.CompositeFields(ctx, f.DataTypeOID)
 			if err != nil {
 				return nil, nil, err
 			}
 			return params, returns, err
-		case err != nil:
+		default:
 			return nil, nil, err
 		}
 	}
