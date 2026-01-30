@@ -1,2 +1,0 @@
-(*compiler.Query)(<nil>)
-(*compiler.ErrCompilationFailed)(compilation error(s): line 2:2: [annotation] exec mode is missing [one/many/exec] for query `SELECT * FROM users`)

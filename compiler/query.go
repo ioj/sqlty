@@ -69,7 +69,6 @@ type Query struct {
 	statement *token
 }
 
-
 func (t *token) String() string {
 	if t == nil {
 		return "nil"
@@ -156,7 +155,7 @@ func (q *Query) DebugString() string {
 // query.
 func (q *Query) NeedsSprintf() bool {
 	for _, p := range q.params {
-		if p.Type != "Scalar" {
+		if p.Type != Scalar {
 			return true
 		}
 	}
