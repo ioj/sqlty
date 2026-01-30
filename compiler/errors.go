@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/gookit/color"
 )
 
 var ErrEmptyFile = errors.New("empty file")
@@ -40,13 +38,9 @@ func (e *ParserError) Error() string {
 	return fmt.Sprintf("line %v:%v: [%v] %v", e.line, e.column, e.errtype, e.msg)
 }
 
-// Sprintf returns a color-formatted error message.
+// Sprintf returns a formatted error message.
 func (e *ParserError) Sprintf() string {
-	return fmt.Sprintf("%v%v %v: %v",
-		color.FgRed.Render("[error]"),
-		color.FgMagenta.Render(fmt.Sprintf("[%v]", e.errtype)),
-		color.FgGray.Render(fmt.Sprintf("%v:%v:%v", e.fname, e.line, e.column)),
-		e.msg)
+	return fmt.Sprintf("[error][%v] %v:%v:%v: %v", e.errtype, e.fname, e.line, e.column, e.msg)
 }
 
 func (e *ErrCompilationFailed) Error() string {
