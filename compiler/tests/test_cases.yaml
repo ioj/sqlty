@@ -228,3 +228,30 @@
     */
     select * from users;
   expectedError: "missing parameter"
+
+- name: MultipleNotNullParams
+  input: |
+    /*
+      @name UpdateUser
+      @exec
+      @notNullParams id, name
+    */
+    update users set name = :name, email = :email where id = :id;
+  expected:
+    name: UpdateUser
+    statement: update users set name = $1, email = $2 where id = $3
+    template: array
+    scalars:
+      - type: scalar
+        idx: 0
+        notNull: true
+        keys: []
+      - type: scalar
+        idx: 1
+        notNull: false
+        keys: []
+      - type: scalar
+        idx: 2
+        notNull: true
+        keys: []
+    notNullArray: [true, false, true]

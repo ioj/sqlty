@@ -267,11 +267,8 @@ SELECT * FROM users WHERE id = :id;
 ```sql
 /*
   @name GetUsersByStatus
-  @param status
-  @param limit
-  @notNullParams (status)
+  @notNullParams status, limit
   @many
-  @returnValueName User
 */
 -- GetUsersByStatus retrieves users filtered by status.
 -- Returns up to `limit` results.
