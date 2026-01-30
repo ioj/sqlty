@@ -12,14 +12,14 @@ const (
 	TokenError
 
 	// DEFAULT mode tokens
-	TokenOpenComment  // /*
-	TokenLineComment  // -- ... \n
-	TokenParamMark    // :
-	TokenIdentifier   // identifier (after : or in comment)
-	TokenWord         // any word or operator sequence
-	TokenString       // '...'
-	TokenSemicolon    // ;
-	TokenPercent      // %
+	TokenOpenComment // /*
+	TokenLineComment // -- ... \n
+	TokenParamMark   // :
+	TokenIdentifier  // identifier (after : or in comment)
+	TokenWord        // any word or operator sequence
+	TokenString      // '...'
+	TokenSemicolon   // ;
+	TokenPercent     // %
 
 	// COMMENT mode tokens
 	TokenCloseComment      // */
