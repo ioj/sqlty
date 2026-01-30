@@ -1,0 +1,230 @@
+- name: SimpleSelectAll
+  input: |
+    /*
+    	@name GetAllUsers
+    	@many
+    */
+    SELECT * FROM users;
+  expected:
+    name: GetAllUsers
+    statement: SELECT * FROM users
+    template: array
+
+- name: MultiLineAnnotation
+  input: |
+    /*
+      @name GetAllUsers
+    	@many
+    */
+    SELECT id, name FROM users;
+  expected:
+    name: GetAllUsers
+    statement: SELECT id, name FROM users
+    template: array
+
+- name: WithScalarParam
+  input: |
+    /* @name GetUserById @many */
+      SELECT * FROM users WHERE userId = :userId;
+  expected:
+    name: GetUserById
+    statement: SELECT * FROM users WHERE userId = $1
+    template: array
+    scalars:
+      - type: scalar
+        idx: 0
+        notNull: false
+    notNullArray: [false]
+
+- name: WithReusedScalarParam
+  input: |
+    /* @name GetUserById @many */
+      SELECT * FROM users WHERE userId = :userId or parentId = :userId;
+  expected:
+    name: GetUserById
+    statement: SELECT * FROM users WHERE userId = $1 or parentId = $1
+    template: array
+    scalars:
+      - type: scalar
+        idx: 0
+        notNull: false
+    notNullArray: [false]
+
+- name: WithStructSpreadParam
+  input: |
+    /*
+        @exec
+        @name CreateCustomer
+        @param customers -> ((customerName, contactName, address)...)
+    */
+      INSERT INTO customers (customer_name, contact_name, address)
+      VALUES :customers;
+  expected:
+    name: CreateCustomer
+    statement: |
+      INSERT INTO customers (customer_name, contact_name, address)
+        VALUES %[1]v
+    template: array
+    structSpreads:
+      - type: structspread
+        idx: 0
+        notNull: false
+        keys:
+          - name: customerName
+            notNull: false
+          - name: contactName
+            notNull: false
+          - name: address
+            notNull: false
+    needsSprintf: true
+    notNullArray: [false, false, false]
+
+- name: WithPostgresCastOperator
+  input: |
+    /* @name GetAllUsers @many */
+    SELECT u."rank" FROM users u where name = :name::text;
+  expected:
+    name: GetAllUsers
+    statement: SELECT u."rank" FROM users u where name = $1::text
+    template: array
+    scalars:
+      - type: scalar
+        idx: 0
+        notNull: false
+    notNullArray: [false]
+
+- name: UpdateWithSQLComments
+  input: |
+    /* @name UpdateBooks @exec */
+    -- UpdateBooks becomes a docstring
+    UPDATE books
+      -- other comment
+      SET name = :name, rank = :rank WHERE id = :id;
+  expected:
+    name: UpdateBooks
+    statement: |
+      UPDATE books
+        -- other comment
+        SET name = $1, rank = $2 WHERE id = $3
+    template: array
+    scalars:
+      - type: scalar
+        idx: 0
+      - type: scalar
+        idx: 1
+      - type: scalar
+        idx: 2
+    notNullArray: [false, false, false]
+    comments:
+      - UpdateBooks becomes a docstring
+
+- name: PostgresArraySlice
+  input: |
+    /* @name TestRange @many */
+    select (ARRAY[1,2,3,4])[2:3] as arr;
+  expected:
+    name: TestRange
+    statement: select (ARRAY[1,2,3,4])[2:3] as arr
+    template: array
+
+- name: WithSpreadParam
+  input: |
+    /*
+      @name InsertIds
+      @exec
+      @param ids -> (...)
+    */
+    insert into table (id) values :ids;
+  expected:
+    name: InsertIds
+    statement: insert into table (id) values %[1]v
+    template: array
+    spreads:
+      - type: spread
+        idx: 0
+        notNull: false
+        keys: []
+    needsSprintf: true
+    notNullArray: [false]
+
+- name: ParamInStringLiteral
+  input: |
+    /*
+      @name FindByLiteral
+      @many
+    */
+    select * from users where name = ':userName';
+  expected:
+    name: FindByLiteral
+    statement: "select * from users where name = ':userName'"
+    template: array
+
+- name: ErrorMissingExecMode
+  input: |
+    /* @name GetUsers */
+    select * from users;
+  expectedError: "exec mode"
+
+- name: ErrorUnusedParam
+  input: |
+    /*
+      @name GetUsers
+      @many
+      @param unusedParam -> (...)
+    */
+    select * from users;
+  expectedError: "not used in the query"
+
+- name: NotNullScalarParam
+  input: |
+    /*
+      @name GetUserById
+      @many
+      @notNullParams userId
+    */
+    select * from users where id = :userId;
+  expected:
+    name: GetUserById
+    statement: select * from users where id = $1
+    template: array
+    scalars:
+      - type: scalar
+        idx: 0
+        notNull: true
+        keys: []
+    notNullArray: [true]
+
+- name: NotNullStructSpreadField
+  input: |
+    /*
+      @name CreateCustomer
+      @exec
+      @param customer -> ((name, email)...)
+      @notNullParams customer.name
+    */
+    insert into customers (name, email) values :customer;
+  expected:
+    name: CreateCustomer
+    statement: insert into customers (name, email) values %[1]v
+    template: array
+    structSpreads:
+      - type: structspread
+        idx: 0
+        notNull: false
+        keys:
+          - name: name
+            notNull: true
+          - name: email
+            notNull: false
+    needsSprintf: true
+    notNullArray: [true, false]
+
+- name: ErrorNotNullMissingParam
+  input: |
+    /*
+      @name GetUsers
+      @many
+      @notNullParams nonExistentParam
+    */
+    select * from users;
+  expectedError: "missing parameter"

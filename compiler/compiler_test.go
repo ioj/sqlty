@@ -1,183 +1,122 @@
 package compiler
 
 import (
+	_ "embed"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
-func TestCompileString_SimpleSelectAll(t *testing.T) {
-	input := `
-/*
-	@name GetAllUsers
-	@many
-*/
-SELECT * FROM users;`
+//go:embed tests/test_cases.yaml
+var testCasesYAML []byte
 
-	query, err := CompileString("test.sql", input)
-
-	require.NoError(t, err)
-	require.NotNil(t, query)
-
-	assert.Equal(t, "GetAllUsers", query.Name())
-	assert.Equal(t, "SELECT * FROM users", query.Statement())
-	assert.Equal(t, "array", query.Template())
-	assert.Equal(t, "test.sql", query.Filename)
-
-	assert.Empty(t, query.Params(Scalar))
-	assert.Empty(t, query.Params(Spread))
-	assert.Empty(t, query.Params(StructSpread))
-
-	assert.False(t, query.NeedsSprintf())
-	assert.Empty(t, query.NotNullArray())
-	assert.Empty(t, query.Comments)
+// StructKeySnapshot represents expected values for a StructKey.
+type StructKeySnapshot struct {
+	Name    string `yaml:"name"`
+	NotNull bool   `yaml:"notNull"`
 }
 
-func TestCompileString_MultiLineAnnotation(t *testing.T) {
-	input := `/*
-  @name GetAllUsers
-	@many
-*/
-SELECT id, name FROM users;`
-
-	query, err := CompileString("test.sql", input)
-
-	require.NoError(t, err)
-	require.NotNil(t, query)
-
-	assert.Equal(t, "GetAllUsers", query.Name())
-	assert.Equal(t, "SELECT id, name FROM users", query.Statement())
-	assert.Equal(t, "array", query.Template())
-	assert.Equal(t, "test.sql", query.Filename)
-
-	assert.Empty(t, query.Params(Scalar))
-	assert.Empty(t, query.Params(Spread))
-	assert.Empty(t, query.Params(StructSpread))
-
-	assert.False(t, query.NeedsSprintf())
-	assert.Empty(t, query.NotNullArray())
-	assert.Empty(t, query.Comments)
+// ParamSnapshot represents expected values for a Param.
+type ParamSnapshot struct {
+	Type    ParamType           `yaml:"type"`
+	Idx     int                 `yaml:"idx"`
+	NotNull bool                `yaml:"notNull"`
+	Keys    []StructKeySnapshot `yaml:"keys"`
 }
 
-func TestCompileString_WithScalarParam(t *testing.T) {
-	input := ` /* @name GetUserById @many */
-  SELECT * FROM users WHERE userId = :userId;`
-
-	query, err := CompileString("test.sql", input)
-
-	require.NoError(t, err)
-	require.NotNil(t, query)
-
-	assert.Equal(t, "GetUserById", query.Name())
-	assert.Equal(t, "SELECT * FROM users WHERE userId = $1", query.Statement())
-	assert.Equal(t, "array", query.Template())
-	assert.Equal(t, "test.sql", query.Filename)
-
-	scalars := query.Params(Scalar)
-	require.Len(t, scalars, 1)
-	assert.Equal(t, Scalar, scalars[0].Type)
-	assert.Equal(t, 0, scalars[0].Idx)
-	assert.False(t, scalars[0].NotNull)
-
-	assert.Empty(t, query.Params(Spread))
-	assert.Empty(t, query.Params(StructSpread))
-
-	assert.False(t, query.NeedsSprintf())
-	assert.Equal(t, []bool{false}, query.NotNullArray())
-	assert.Empty(t, query.Comments)
+// QuerySnapshot represents expected values for a compiled Query.
+type QuerySnapshot struct {
+	Name          string          `yaml:"name"`
+	Statement     string          `yaml:"statement"`
+	Template      string          `yaml:"template"`
+	Scalars       []ParamSnapshot `yaml:"scalars"`
+	Spreads       []ParamSnapshot `yaml:"spreads"`
+	StructSpreads []ParamSnapshot `yaml:"structSpreads"`
+	NeedsSprintf  bool            `yaml:"needsSprintf"`
+	NotNullArray  []bool          `yaml:"notNullArray"`
+	Comments      []string        `yaml:"comments"`
 }
 
-func TestCompileString_WithReusedScalarParam(t *testing.T) {
-	input := `/* @name GetUserById @many */
-  SELECT * FROM users WHERE userId = :userId or parentId = :userId;`
-
-	query, err := CompileString("test.sql", input)
-
-	require.NoError(t, err)
-	require.NotNil(t, query)
-
-	assert.Equal(t, "GetUserById", query.Name())
-	assert.Equal(t, "SELECT * FROM users WHERE userId = $1 or parentId = $1", query.Statement())
-	assert.Equal(t, "array", query.Template())
-	assert.Equal(t, "test.sql", query.Filename)
-
-	scalars := query.Params(Scalar)
-	require.Len(t, scalars, 1)
-	assert.Equal(t, Scalar, scalars[0].Type)
-	assert.Equal(t, 0, scalars[0].Idx)
-	assert.False(t, scalars[0].NotNull)
-
-	assert.Empty(t, query.Params(Spread))
-	assert.Empty(t, query.Params(StructSpread))
-
-	assert.False(t, query.NeedsSprintf())
-	assert.Equal(t, []bool{false}, query.NotNullArray())
-	assert.Empty(t, query.Comments)
+// TestUseCase represents a single test case loaded from YAML.
+type TestUseCase struct {
+	Name          string        `yaml:"name"`
+	Input         string        `yaml:"input"`
+	Expected      QuerySnapshot `yaml:"expected"`
+	ExpectedError string        `yaml:"expectedError"`
 }
 
-func TestCompileString_WithStructSpreadParam(t *testing.T) {
-	input := `/*
-    @exec
-    @name CreateCustomer
-    @param customers -> ((customerName, contactName, address)...)
-*/
-  INSERT INTO customers (customer_name, contact_name, address)
-  VALUES :customers;`
+// assertParamEquals compares a single Param against an expected ParamSnapshot.
+func assertParamEquals(t *testing.T, param *Param, expected ParamSnapshot, label string) {
+	t.Helper()
 
-	query, err := CompileString("test.sql", input)
+	assert.Equal(t, expected.Type, param.Type, "%s.Type mismatch", label)
+	assert.Equal(t, expected.Idx, param.Idx, "%s.Idx mismatch", label)
+	assert.Equal(t, expected.NotNull, param.NotNull, "%s.NotNull mismatch", label)
 
-	require.NoError(t, err)
-	require.NotNil(t, query)
-
-	assert.Equal(t, "CreateCustomer", query.Name())
-	assert.Equal(t, "array", query.Template())
-	assert.Equal(t, "test.sql", query.Filename)
-
-	assert.Empty(t, query.Params(Scalar))
-	assert.Empty(t, query.Params(Spread))
-
-	structSpreads := query.Params(StructSpread)
-	require.Len(t, structSpreads, 1)
-	assert.Equal(t, StructSpread, structSpreads[0].Type)
-	assert.Equal(t, 0, structSpreads[0].Idx)
-	assert.False(t, structSpreads[0].NotNull)
-
-	keys := structSpreads[0].Keys()
-	require.Len(t, keys, 3)
-	assert.Equal(t, "customerName", keys[0].Name())
-	assert.Equal(t, "contactName", keys[1].Name())
-	assert.Equal(t, "address", keys[2].Name())
-
-	assert.True(t, query.NeedsSprintf())
-	assert.Equal(t, []bool{false, false, false}, query.NotNullArray())
-	assert.Empty(t, query.Comments)
+	keys := param.Keys()
+	require.Len(t, keys, len(expected.Keys), "%s.Keys count mismatch", label)
+	for j, expKey := range expected.Keys {
+		assert.Equal(t, expKey.Name, keys[j].Name(), "%s.Keys[%d].Name mismatch", label, j)
+		assert.Equal(t, expKey.NotNull, keys[j].NotNull, "%s.Keys[%d].NotNull mismatch", label, j)
+	}
 }
 
-func TestCompileString_WithPostgresCastOperator(t *testing.T) {
-	input := `/* @name GetAllUsers @many */
-SELECT u."rank" FROM users u where name = :name::text;`
+// assertParamsEquals compares actual Params against expected ParamSnapshots.
+func assertParamsEquals(t *testing.T, params []*Param, expected []ParamSnapshot, paramType string) {
+	t.Helper()
 
-	query, err := CompileString("test.sql", input)
+	require.Len(t, params, len(expected), "%s params count mismatch", paramType)
+	for i, exp := range expected {
+		assertParamEquals(t, params[i], exp, fmt.Sprintf("%s[%d]", paramType, i))
+	}
+}
 
-	require.NoError(t, err)
-	require.NotNil(t, query)
+// assertQueryEquals compares a compiled Query against an expected QuerySnapshot.
+func assertQueryEquals(t *testing.T, query *Query, expected QuerySnapshot) {
+	t.Helper()
 
-	assert.Equal(t, "GetAllUsers", query.Name())
-	assert.Equal(t, `SELECT u."rank" FROM users u where name = $1::text`, query.Statement())
-	assert.Equal(t, "array", query.Template())
-	assert.Equal(t, "test.sql", query.Filename)
+	assert.Equal(t, expected.Name, query.Name(), "Name mismatch")
+	assert.Equal(t, strings.TrimSuffix(expected.Statement, "\n"), query.Statement(), "Statement mismatch")
+	assert.Equal(t, expected.Template, query.Template(), "Template mismatch")
 
-	scalars := query.Params(Scalar)
-	require.Len(t, scalars, 1)
-	assert.Equal(t, Scalar, scalars[0].Type)
-	assert.Equal(t, 0, scalars[0].Idx)
-	assert.False(t, scalars[0].NotNull)
+	assertParamsEquals(t, query.Params(Scalar), expected.Scalars, "Scalar")
+	assertParamsEquals(t, query.Params(Spread), expected.Spreads, "Spread")
+	assertParamsEquals(t, query.Params(StructSpread), expected.StructSpreads, "StructSpread")
 
-	assert.Empty(t, query.Params(Spread))
-	assert.Empty(t, query.Params(StructSpread))
+	assert.Equal(t, expected.NeedsSprintf, query.NeedsSprintf(), "NeedsSprintf mismatch")
+	assert.Equal(t, expected.NotNullArray, query.NotNullArray(), "NotNullArray mismatch")
+	assert.Equal(t, expected.Comments, query.Comments, "Comments mismatch")
+}
 
-	assert.False(t, query.NeedsSprintf())
-	assert.Equal(t, []bool{false}, query.NotNullArray())
-	assert.Empty(t, query.Comments)
+func TestCompileString(t *testing.T) {
+	var testCases []TestUseCase
+	err := yaml.Unmarshal(testCasesYAML, &testCases)
+	require.NoError(t, err, "Failed to parse test cases YAML")
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			query, err := CompileString("test.sql", tc.Input)
+
+			if tc.ExpectedError != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.ExpectedError)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, query)
+
+			// Set default template if not specified
+			expected := tc.Expected
+			if expected.Template == "" {
+				expected.Template = "array"
+			}
+
+			assertQueryEquals(t, query, expected)
+		})
+	}
 }
