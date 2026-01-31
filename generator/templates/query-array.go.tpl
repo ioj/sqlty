@@ -2,6 +2,15 @@
 
 package {{.PackageName}}
 
+import (
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+)
+
 {{- /*
   Render all necessary structs (parameters and return values)
   for all provided queries.
@@ -45,18 +54,16 @@ package {{.PackageName}}
 {{- $returnsStruct := returnsStruct . }}
 {{- $returnType := printf "*%v" .Returns.Name }}
 {{- $returnNilValue := "nil" }}
-{{- $returnZeroValue := printf "&%v{}" .Returns.Name }}
 
 {{- if eq .ExecMode "exec" }}
   {{- $returnType = "pgconn.CommandTag" }}
-  {{- $returnZeroValue := "make(pgconn.CommandTag, 0)" }}
+  {{- $returnNilValue = "pgconn.CommandTag{}" }}
 {{- else -}}
   {{- if not $returnsStruct -}}
     {{- $returnType = firstParamTypeName .Returns.Params -}}
     {{ if eq .ExecMode "one" -}}
       {{- $returnNilValue = firstParamNilReturnValue .Returns.Params -}}
     {{- end -}}
-    {{- $returnZeroValue = firstParamZeroReturnValue .Returns.Params -}}
   {{- end -}}
 {{- end -}}
 
@@ -111,13 +118,7 @@ func (db *DB) {{ .Name }}(ctx context.Context
 
     {{ end }}
     // Start building a list of arguments which will be passed to Exec/Query/QueryRow
-    sqltyStmtargs := []interface{}{
-      {{ if .Returns.IsCompositeType -}}
-      // For composite return type, use binary format code to correctly scan the result
-      // into a struct.
-      pgx.QueryResultFormats{pgx.BinaryFormatCode},
-      // Query parameters below.
-      {{ end -}}
+    sqltyStmtargs := []any{
       {{ range .Params.Scalar -}}
         {{ if $paramsAsStruct }}args.{{ end }}{{ .Name -}},
       {{ end }}
@@ -186,8 +187,8 @@ func (db *DB) {{ .Name }}(ctx context.Context
       {{ end }}
     {{ end }}
 
-    // Convert []string to []interface
-    sqltyIspreads := make([]interface{}, len(sqltySpreads))
+    // Convert []string to []any
+    sqltyIspreads := make([]any, len(sqltySpreads))
     for sqltyN := range sqltySpreads {
       sqltyIspreads[sqltyN] = sqltySpreads[sqltyN]
     }
@@ -198,58 +199,32 @@ func (db *DB) {{ .Name }}(ctx context.Context
   {{ end }}
 
   {{ if eq .ExecMode "many" }}
-    {{- /* Exec mode: many */ -}}
+    {{- /* Exec mode: many - use CollectRows */ -}}
 
     sqltyRows, err := db.tx.Query(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }})
     if err != nil {
       return {{ $returnNilValue }}, err
     }
-    defer sqltyRows.Close()
 
-    var sqltyResults []{{ $returnType }}
-    for sqltyRows.Next() {
-      sqltyR := {{ $returnZeroValue }}
-      {{ if not $returnsStruct }}
-        if err := sqltyRows.Scan(&sqltyR); err != nil {
-          return {{ $returnNilValue }}, err
-        }
-      {{ else }}
-        if err := sqltyRows.Scan(
-          {{- range .Returns.Params -}}
-            &sqltyR.{{ .Name }},
-          {{- end -}}
-        ); err != nil {
-        return {{ $returnNilValue }}, err
-        }
-      {{ end }}
-      sqltyResults = append(sqltyResults, sqltyR)
-    }
-
-    return sqltyResults, sqltyRows.Err()
+    {{ if not $returnsStruct }}
+      return pgx.CollectRows(sqltyRows, pgx.RowTo[{{ $returnType }}])
+    {{ else }}
+      return pgx.CollectRows(sqltyRows, pgx.RowToAddrOfStructByPos[{{ .Returns.Name }}])
+    {{ end }}
 
   {{- else if eq .ExecMode "one" }}
-    {{- /* Exec mode: one */ -}}
+    {{- /* Exec mode: one - use CollectOneRow */ -}}
 
-    {{- if not $returnsStruct -}}
-      sqltyResult := {{ $returnZeroValue }}
-      err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(&sqltyResult)
-    {{ else -}}
-      sqltyResult := &{{ .Returns.Name }}{}
-      {{ if .Returns.IsCompositeType }}
-        err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(&sqltyResult)
-      {{ else -}}
-        err := db.tx.QueryRow(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }}).Scan(
-          {{- range .Returns.Params -}}
-            &sqltyResult.{{ .Name }},
-          {{- end -}}
-        )
-      {{ end }}
-    {{ end -}}
+    sqltyRows, err := db.tx.Query(ctx, sqltyStmt{{ if hasParams . }}, sqltyStmtargs...{{ end }})
     if err != nil {
       return {{ $returnNilValue }}, err
     }
 
-    return sqltyResult, nil
+    {{- if not $returnsStruct }}
+      return pgx.CollectOneRow(sqltyRows, pgx.RowTo[{{ $returnType }}])
+    {{ else }}
+      return pgx.CollectOneRow(sqltyRows, pgx.RowToAddrOfStructByPos[{{ .Returns.Name }}])
+    {{ end }}
 
   {{- else }}
     {{- /* Exec mode: exec */ -}}

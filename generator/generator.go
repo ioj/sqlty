@@ -10,8 +10,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/ioj/sqlty/helpers"
 	"github.com/ioj/sqlty/stmt"
-	"github.com/serenize/snaker"
 )
 
 // Matches all characters that can't be used in golang's identifiers
@@ -67,7 +67,7 @@ var tmplfn = template.FuncMap{
 
 	"valueToIdent": func(val string) string {
 		normalized := identFix.ReplaceAllString(val, "_")
-		normalized = snaker.SnakeToCamel(normalized)
+		normalized = helpers.SnakeToPascalCase(normalized)
 		return normalized
 	},
 
@@ -89,30 +89,32 @@ var tmplfn = template.FuncMap{
 }
 
 func New(templatedir string, cachedir string) (*Generator, error) {
-	var err error
 	g := &Generator{}
 
+	var err error
 	g.tmpl, err = template.New("").Funcs(tmplfn).ParseFS(defaultTemplates, "templates/*.go.tpl")
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse default templates: %w", err)
+	}
 
 	if templatedir != "" {
 		glob := path.Join(templatedir, "*.go.tpl")
 		g.tmpl, err = g.tmpl.ParseGlob(glob)
-	}
-
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse custom templates from %s: %w", templatedir, err)
+		}
 	}
 
 	g.cachedir = cachedir
 	g.cache, err = newCacheFromFile(cachedir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load cache: %w", err)
 	}
 
 	return g, nil
 }
 
-func (g *Generator) generate(fname string, template string, params interface{}) error {
+func (g *Generator) generate(fname string, templateName string, params any) error {
 	updated, err := g.cache.update(fname, params)
 	if err != nil {
 		return err
@@ -122,21 +124,28 @@ func (g *Generator) generate(fname string, template string, params interface{}) 
 		return nil
 	}
 
+	tmpl := g.tmpl.Lookup(templateName)
+	if tmpl == nil {
+		return fmt.Errorf("template not found: %v", templateName)
+	}
+
 	f, err := os.Create(fname)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create %s: %w", fname, err)
 	}
 
-	tmpl := g.tmpl.Lookup(template)
-	if tmpl == nil {
-		return fmt.Errorf("template not found: %v", template)
+	if err := tmpl.Execute(f, params); err != nil {
+		f.Close()
+		os.Remove(fname) // Clean up partial file
+		return fmt.Errorf("failed to execute template %s: %w", templateName, err)
 	}
 
-	if err := g.tmpl.Lookup(template).Execute(f, params); err != nil {
-		return err
+	if err := f.Close(); err != nil {
+		os.Remove(fname) // Clean up on close error
+		return fmt.Errorf("failed to write %s: %w", fname, err)
 	}
 
-	return f.Close()
+	return nil
 }
 
 func (g *Generator) Query(templatename string, fname string, q *stmt.Query) error {
@@ -161,12 +170,12 @@ func (g *Generator) Enums(pkgpath string, enums *stmt.Enums) error {
 func (g *Generator) CompositeTypes(pkgpath string, types *stmt.CompositeTypes) error {
 	fname := path.Join(pkgpath, "composite_types.sqlty.gen.go")
 	if types == nil || len(types.Types) == 0 {
-		// Remove the file if there are no custom enums
+		// Remove the file if there are no composite types
 		os.Remove(fname)
 		return nil
 	}
 
-	return g.generate(fname, "enums.go.tpl", types)
+	return g.generate(fname, "composite_types.go.tpl", types)
 }
 
 func (g *Generator) DB(pkgpath string, db *stmt.DB) error {

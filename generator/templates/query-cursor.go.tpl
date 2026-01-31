@@ -2,6 +2,14 @@
 
 package {{.PackageName}}
 
+import (
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/jackc/pgx/v5"
+)
+
 {{- if ne .ExecMode "many" }}
 // Error: Cursor queries work only in ExecMode "many"
 {{- else -}}
@@ -52,11 +60,7 @@ package {{.PackageName}}
 {{- $returnNilValue := "nil" }}
 {{- $returnZeroValue := printf "&%v{}" .Returns.Name }}
 
-{{- if $returnsStruct -}}
-  {{- $returnType := printf "*%v" .Returns.Name }}
-  {{- $returnNilValue := "nil" }}
-  {{- $returnZeroValue := printf "&%v{}" .Returns.Name }}
-{{- else -}}
+{{- if not $returnsStruct -}}
   {{- $returnType = firstParamTypeName .Returns.Params -}}
   {{- $returnNilValue = firstParamNilReturnValue .Returns.Params -}}
   {{- $returnZeroValue = firstParamZeroReturnValue .Returns.Params -}}
@@ -99,20 +103,7 @@ func (cur *{{ .Name }}Cursor) Scan() ({{- $returnType -}}, error) {
   return sqltyR, nil
 }
 
-{{- /* Render query */ -}}
-
-{{- if eq .ExecMode "exec" }}
-  {{- $returnType = "pgconn.CommandTag" }}
-  {{- $returnZeroValue := "make(pgconn.CommandTag, 0)" }}
-{{- else -}}
-  {{- if not $returnsStruct -}}
-    {{- $returnType = firstParamTypeName .Returns.Params -}}
-    {{ if eq .ExecMode "one" -}}
-      {{- $returnNilValue = firstParamNilReturnValue .Returns.Params -}}
-    {{- end -}}
-    {{- $returnZeroValue = firstParamZeroReturnValue .Returns.Params -}}
-  {{- end -}}
-{{- end -}}
+{{- /* Render query function */ -}}
 
 {{ range .Comments }}
   // {{ . -}}
@@ -161,13 +152,7 @@ func (db *DB) {{ .Name }}(ctx context.Context
 
     {{ end }}
     // Start building a list of arguments which will be passed to Query
-    sqltyStmtargs := []interface{}{
-      {{ if .Returns.IsCompositeType -}}
-      // For composite return type, use binary format code to correctly scan the result
-      // into a struct.
-      pgx.QueryResultFormats{pgx.BinaryFormatCode},
-      // Query parameters below.
-      {{ end -}}
+    sqltyStmtargs := []any{
       {{ range .Params.Scalar -}}
         {{ if $paramsAsStruct }}args.{{ end }}{{ .Name -}},
       {{ end }}
@@ -236,8 +221,8 @@ func (db *DB) {{ .Name }}(ctx context.Context
       {{ end }}
     {{ end }}
 
-    // Convert []string to []interface
-    sqltyIspreads := make([]interface{}, len(sqltySpreads))
+    // Convert []string to []any
+    sqltyIspreads := make([]any, len(sqltySpreads))
     for sqltyN := range sqltySpreads {
       sqltyIspreads[sqltyN] = sqltySpreads[sqltyN]
     }

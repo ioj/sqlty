@@ -16,15 +16,15 @@ types:
   - name: pg_catalog.bit
     notNull: true
     to:
-      name: "pgtype.Bit"
-      zeroValue: "pgtype.Bit{}"
+      name: "pgtype.Bits"
+      zeroValue: "pgtype.Bits{}"
       nullable: false
 
   - name: pg_catalog.bit
     notNull: false
     to:
-      name: "*pgtype.Bit"
-      zeroValue: "new(pgtype.Bit)"
+      name: "pgtype.Bits"
+      zeroValue: "pgtype.Bits{}"
       nullable: true
 
   - name: pg_catalog.bytea
@@ -104,28 +104,28 @@ types:
 
   - name: pg_catalog.cidr
     to:
-      name: "pgtype.CIDR"
-      zeroValue: "pgtype.CIDR{}"
+      name: "netip.Prefix"
+      zeroValue: "netip.Prefix{}"
       nullable: true
 
   - name: pg_catalog.cidr
     notNull: true
     to:
-      name: net.IPNet
-      zeroValue: "net.IPNet{}"
+      name: "netip.Prefix"
+      zeroValue: "netip.Prefix{}"
       nullable: false
 
   - name: pg_catalog.inet
     to:
-      name: pgtype.Inet
-      zeroValue: "pgtype.Inet{}"
+      name: "netip.Addr"
+      zeroValue: "netip.Addr{}"
       nullable: true
 
   - name: pg_catalog.inet
     notNull: true
     to:
-      name: pgtype.Inet
-      zeroValue: "pgtype.Inet{}"
+      name: "netip.Addr"
+      zeroValue: "netip.Addr{}"
       nullable: false
 
   - name: pg_catalog.int4
@@ -153,7 +153,7 @@ types:
       name: "*int"
       zeroValue: "new(int)"
       nullable: true
-  
+
   - name: pg_catalog.float4
     notNull: true
     to:
@@ -202,9 +202,9 @@ types:
 
   - name: pg_catalog.timestamptz
     to:
-      name: "pgtype.Timestamp"
-      zeroValue: "pgtype.Timestamp{}"
-      nullable: false
+      name: "pgtype.Timestamptz"
+      zeroValue: "pgtype.Timestamptz{}"
+      nullable: true
 
   - name: pg_catalog.interval
     notNull: true
@@ -228,15 +228,15 @@ types:
 
   - name: pg_catalog.json
     to:
-      name: "pgtype.JSON"
-      zeroValue: "pgtype.JSON{}"
-      nullable: false
+      name: "[]byte"
+      zeroValue: "[]byte{}"
+      nullable: true
 
   - name: pg_catalog.jsonb
     to:
-      name: "pgtype.JSONB"
-      zeroValue: "pgtype.JSONB{}"
-      nullable: false
+      name: "[]byte"
+      zeroValue: "[]byte{}"
+      nullable: true
 
   - name: pg_catalog.oid
     notNull: true
@@ -247,20 +247,20 @@ types:
 
   - name: pg_catalog.oid
     to:
-      name: "pgtype.OID"
-      zeroValue: "pgtype.OID{}"
+      name: "uint32"
+      zeroValue: "0"
       nullable: false
 
   - name: pg_catalog.cid
     to:
-      name: "pgtype.CID"
-      zeroValue: "pgtype.CID{}"
+      name: "uint32"
+      zeroValue: "0"
       nullable: false
 
   - name: pg_catalog.xid
     to:
-      name: "pgtype.XID"
-      zeroValue: "pgtype.XID{}"
+      name: "uint32"
+      zeroValue: "0"
       nullable: false
 
   - name: pg_catalog.tid
@@ -268,70 +268,157 @@ types:
       name: "pgtype.TID"
       zeroValue: "pgtype.TID{}"
       nullable: false
-# case PGTypeDef{"pg_catalog.timestamp", true}:
-#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.timestamp", false}:
-#   return &stmt.Type{Name: "pgtype.Timestamp", ZeroValue: "pgtype.Timestamp{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.timestamptz", true}:
-#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
-#
-# case PGTypeDef{"pg_catalog.timestamptz", false}:
-#   return &stmt.Type{Name: "pgtype.Timestamptz", ZeroValue: "pgtype.Timestamptz{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.bool", true}:
-#   return &stmt.Type{Name: "bool", ZeroValue: "false", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.bool", false}:
-#   return &stmt.Type{Name: "*bool", ZeroValue: "new(bool)", Nullable: true}, nil
-#
-# case PGTypeDef{"pg_catalog.int2", true}:
-#   return &stmt.Type{Name: "int", ZeroValue: "0", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.int2", false}:
-#   return &stmt.Type{Name: "*int", ZeroValue: "new(int)", Nullable: true}, nil
-#
-# case PGTypeDef{"pg_catalog.int4", true}:
-#   return &stmt.Type{Name: "int", ZeroValue: "0", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.int4", false}:
-#   return &stmt.Type{Name: "*int", ZeroValue: "new(int)", Nullable: true}, nil
-# case PGTypeDef{"pg_catalog._int4", true}:
-#   return &stmt.Type{Name: "pgtype.Int4Array", ZeroValue: "pgtype.Int4Array{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog._int4", false}:
-#   return &stmt.Type{Name: "pgtype.Int4Array", ZeroValue: "pgtype.Int4Array{}", Nullable: false}, nil
-#
-# case PGTypeDef{"pg_catalog.int8", true}:
-#   return &stmt.Type{Name: "int", ZeroValue: "0", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.int8", false}:
-#   return &stmt.Type{Name: "*int", ZeroValue: "new(int)", Nullable: true}, nil
-# case PGTypeDef{"pg_catalog._int8", true}:
-#   return &stmt.Type{Name: "pgtype.Int8Array", ZeroValue: "pgtype.Int8Array{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog._int8", false}:
-#   return &stmt.Type{Name: "pgtype.Int8Array", ZeroValue: "pgtype.Int8Array{}", Nullable: false}, nil
-#
-# case PGTypeDef{"pg_catalog.float8", true}:
-#   return &stmt.Type{Name: "float64", ZeroValue: "0.0", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.float8", false}:
-#   return &stmt.Type{Name: "*float64", ZeroValue: "new(float64)", Nullable: true}, nil
-# case PGTypeDef{"pg_catalog._float8", true}:
-#   return &stmt.Type{Name: "pgtype.Float8Array", ZeroValue: "pgtype.Int8Array{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog._float8", false}:
-#   return &stmt.Type{Name: "pgtype.Float8Array", ZeroValue: "pgtype.Int8Array{}", Nullable: false}, nil
-#
-# case PGTypeDef{"pg_catalog.numeric", true}:
-#   return &stmt.Type{Name: "pgtype.Numeric", ZeroValue: "pgtype.Numeric{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.numeric", false}:
-#   return &stmt.Type{Name: "pgtype.Numeric", ZeroValue: "pgtype.Numeric{}", Nullable: false}, nil
-#
-# case PGTypeDef{"pg_catalog.text", true}:
-#   return &stmt.Type{Name: "string", ZeroValue: "\"\"", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.text", false}:
-#   return &stmt.Type{Name: "*string", ZeroValue: "new(string)", Nullable: true}, nil
-# case PGTypeDef{"pg_catalog.date", true}:
-#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.date", false}:
-#   return &stmt.Type{Name: "pgtype.Date", ZeroValue: "pgtype.Date{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.time", true}:
-#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.time", false}:
-#   return &stmt.Type{Name: "pgtype.Time", ZeroValue: "pgtype.Time{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.timetz", true}:
-#   return &stmt.Type{Name: "time.Time", ZeroValue: "time.Time{}", Nullable: false}, nil
-# case PGTypeDef{"pg_catalog.timetz", false}:
-#   return &stmt.Type{Name: "pgtype.Time", ZeroValue: "pgtype.Time{}", Nullable: false}, nil
+
+  # int2 (smallint)
+  - name: pg_catalog.int2
+    notNull: true
+    to:
+      name: "int16"
+      zeroValue: "0"
+      nullable: false
+
+  - name: pg_catalog.int2
+    to:
+      name: "*int16"
+      zeroValue: "new(int16)"
+      nullable: true
+
+  # bpchar (fixed-length char)
+  - name: pg_catalog.bpchar
+    notNull: true
+    to:
+      name: "string"
+      zeroValue: '""'
+      nullable: false
+
+  - name: pg_catalog.bpchar
+    to:
+      name: "*string"
+      zeroValue: "new(string)"
+      nullable: true
+
+  # char (single character, internal type)
+  - name: pg_catalog.char
+    notNull: true
+    to:
+      name: "byte"
+      zeroValue: "0"
+      nullable: false
+
+  - name: pg_catalog.char
+    to:
+      name: "*byte"
+      zeroValue: "new(byte)"
+      nullable: true
+
+  # name (63-byte identifier)
+  - name: pg_catalog.name
+    notNull: true
+    to:
+      name: "string"
+      zeroValue: '""'
+      nullable: false
+
+  - name: pg_catalog.name
+    to:
+      name: "*string"
+      zeroValue: "new(string)"
+      nullable: true
+
+  # time (time without timezone)
+  - name: pg_catalog.time
+    notNull: true
+    to:
+      name: "pgtype.Time"
+      zeroValue: "pgtype.Time{}"
+      nullable: false
+
+  - name: pg_catalog.time
+    to:
+      name: "pgtype.Time"
+      zeroValue: "pgtype.Time{}"
+      nullable: true
+
+  # timetz (time with timezone)
+  - name: pg_catalog.timetz
+    notNull: true
+    to:
+      name: "pgtype.Time"
+      zeroValue: "pgtype.Time{}"
+      nullable: false
+
+  - name: pg_catalog.timetz
+    to:
+      name: "pgtype.Time"
+      zeroValue: "pgtype.Time{}"
+      nullable: true
+
+  # varbit (variable-length bit string)
+  - name: pg_catalog.varbit
+    notNull: true
+    to:
+      name: "pgtype.Bits"
+      zeroValue: "pgtype.Bits{}"
+      nullable: false
+
+  - name: pg_catalog.varbit
+    to:
+      name: "pgtype.Bits"
+      zeroValue: "pgtype.Bits{}"
+      nullable: true
+
+  # xml
+  - name: pg_catalog.xml
+    notNull: true
+    to:
+      name: "string"
+      zeroValue: '""'
+      nullable: false
+
+  - name: pg_catalog.xml
+    to:
+      name: "*string"
+      zeroValue: "new(string)"
+      nullable: true
+
+  # money
+  - name: pg_catalog.money
+    notNull: true
+    to:
+      name: "string"
+      zeroValue: '""'
+      nullable: false
+
+  - name: pg_catalog.money
+    to:
+      name: "*string"
+      zeroValue: "new(string)"
+      nullable: true
+
+  # macaddr
+  - name: pg_catalog.macaddr
+    notNull: true
+    to:
+      name: "net.HardwareAddr"
+      zeroValue: "net.HardwareAddr{}"
+      nullable: false
+
+  - name: pg_catalog.macaddr
+    to:
+      name: "net.HardwareAddr"
+      zeroValue: "net.HardwareAddr{}"
+      nullable: true
+
+  # macaddr8
+  - name: pg_catalog.macaddr8
+    notNull: true
+    to:
+      name: "net.HardwareAddr"
+      zeroValue: "net.HardwareAddr{}"
+      nullable: false
+
+  - name: pg_catalog.macaddr8
+    to:
+      name: "net.HardwareAddr"
+      zeroValue: "net.HardwareAddr{}"
+      nullable: true

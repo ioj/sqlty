@@ -8,8 +8,7 @@ import (
 
 	"github.com/ioj/sqlty/helpers"
 	"github.com/ioj/sqlty/stmt"
-	"github.com/jackc/pgx/v4"
-	"github.com/serenize/snaker"
+	"github.com/jackc/pgx/v5"
 )
 
 var (
@@ -120,7 +119,7 @@ func newPgTypes(ctx context.Context, db *pgx.Conn, types []PGTypeTranslation) (*
 			return nil, err
 		}
 
-		n := snaker.SnakeToCamel(t.Name)
+		n := helpers.SnakeToPascalCase(t.Name)
 
 		// PostgreSQL defines type names of arrays of type as _typename.
 		// SnakeToCamel removes the underscore prefix. Let's prevent that.
@@ -188,10 +187,10 @@ func (t *pgType) Fullname() string {
 
 func (t *pgType) GolangName() string {
 	if t.UniqueName || t.Namespace == "public" {
-		return snaker.SnakeToCamel(t.Name)
+		return helpers.SnakeToPascalCase(t.Name)
 	}
 
-	return snaker.SnakeToCamel(t.Namespace + "_" + t.Name)
+	return helpers.SnakeToPascalCase(t.Namespace + "_" + t.Name)
 }
 
 func (pt *pgTypes) Enums() []*stmt.Enum {
@@ -299,6 +298,11 @@ func (pt *pgTypes) Type(oid uint32, notnull bool) (*stmt.Type, error) {
 	pgtype, ok := pt.types[oid]
 	if !ok {
 		return nil, fmt.Errorf("no type mapping for OID = %v", oid)
+	}
+
+	// Domain types resolve to their base type, inheriting NOT NULL constraint
+	if pgtype.Type == 'd' && pgtype.BaseType != 0 {
+		return pt.Type(pgtype.BaseType, notnull || pgtype.NotNull)
 	}
 
 	t := PGTypeDef{Fullname: pgtype.Fullname(), NotNull: notnull || pgtype.NotNull}

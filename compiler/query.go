@@ -7,10 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/ioj/sqlty/helpers"
 	"github.com/ioj/sqlty/stmt"
-	"github.com/serenize/snaker"
 )
 
 // token is a string with a location.
@@ -68,17 +66,6 @@ type Query struct {
 	Filename  string
 	Comments  []string
 	statement *token
-}
-
-// newToken creates a new string with a location marker from the parser context.
-func newToken(ctx *antlr.BaseParserRuleContext) *token {
-	return &token{
-		Value:  ctx.GetText(),
-		Start:  ctx.GetStart().GetStart(),
-		Stop:   ctx.GetStop().GetStop(),
-		Line:   ctx.GetStart().GetLine(),
-		Column: ctx.GetStart().GetColumn(),
-	}
 }
 
 func (t *token) String() string {
@@ -167,7 +154,7 @@ func (q *Query) DebugString() string {
 // query.
 func (q *Query) NeedsSprintf() bool {
 	for _, p := range q.params {
-		if p.Type != "Scalar" {
+		if p.Type != Scalar {
 			return true
 		}
 	}
@@ -248,6 +235,11 @@ func (q *Query) Statement() string {
 		}
 	}
 
+	// If no replacements needed, return original statement
+	if len(reps) == 0 {
+		return q.statement.Value
+	}
+
 	sort.Slice(reps, func(i, j int) bool {
 		return reps[i].t.Start < reps[j].t.Start
 	})
@@ -259,6 +251,12 @@ func (q *Query) Statement() string {
 	orig := q.statement.Value
 
 	offset := reps[0].t.Start - origstart
+	if offset < 0 {
+		offset = 0
+	}
+	if offset > len(orig) {
+		offset = len(orig)
+	}
 	stmt.WriteString(orig[0:offset])
 
 	// insert all replacements
@@ -266,6 +264,9 @@ func (q *Query) Statement() string {
 		stmt.WriteString(r.r)
 
 		offset = r.t.Stop - origstart + 2
+		if offset < 0 {
+			offset = 0
+		}
 
 		var next int
 		if n == len(reps)-1 {
@@ -276,6 +277,17 @@ func (q *Query) Statement() string {
 			// otherwise, write the statement up to the next
 			// replacement and do next iteration
 			next = reps[n+1].t.Start - origstart
+		}
+
+		// Ensure bounds are valid
+		if offset > len(orig) {
+			offset = len(orig)
+		}
+		if next > len(orig) {
+			next = len(orig)
+		}
+		if offset > next {
+			offset = next
 		}
 
 		stmt.WriteString(orig[offset:next])
@@ -315,6 +327,15 @@ func (q *Query) PreparedQuery() string {
 // StmtQuery returns a stmt.Query based on internal values and type resolutions for arguments
 // and return values provided in parameters.
 func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns *stmt.Struct) (*stmt.Query, error) {
+	// Validate that ptypes count matches expected parameter count
+	expectedTypes := len(q.Params(Scalar)) + len(q.Params(Spread))
+	for _, ss := range q.Params(StructSpread) {
+		expectedTypes += len(ss.Keys())
+	}
+	if len(ptypes) != expectedTypes {
+		return nil, fmt.Errorf("type count mismatch: expected %d parameters, got %d types", expectedTypes, len(ptypes))
+	}
+
 	stmtq := &stmt.Query{
 		PackageName: packageName,
 		Statement:   q.Statement(),
@@ -336,7 +357,7 @@ func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns *stmt.
 		name = regexp.MustCompile(`[^a-zA-Z0-9_.]`).ReplaceAllString(name, "_")
 	}
 
-	stmtq.Name = snaker.SnakeToCamel(name)
+	stmtq.Name = helpers.SnakeToPascalCase(name)
 
 	// Set the exec mode
 	switch q.execMode.Value {
@@ -359,7 +380,7 @@ func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns *stmt.
 	private := true
 
 	if q.paramStructName != nil {
-		stmtq.Params.Name = snaker.SnakeToCamel(q.paramStructName.Value)
+		stmtq.Params.Name = helpers.SnakeToPascalCase(q.paramStructName.Value)
 
 		// If there's a param struct name, all parameters are going to be placed in a struct,
 		// so their names should be public. If the param struct name is empty, all parameters

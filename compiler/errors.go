@@ -4,9 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/antlr/antlr4/runtime/Go/antlr"
-	"github.com/gookit/color"
 )
 
 var ErrEmptyFile = errors.New("empty file")
@@ -28,8 +25,6 @@ type ErrCompilationFailed struct {
 }
 
 type errorListener struct {
-	*antlr.DefaultErrorListener
-
 	fname  string
 	errors []*ParserError
 }
@@ -43,13 +38,9 @@ func (e *ParserError) Error() string {
 	return fmt.Sprintf("line %v:%v: [%v] %v", e.line, e.column, e.errtype, e.msg)
 }
 
-// Sprintf returns a color-formatted error message.
+// Sprintf returns a formatted error message.
 func (e *ParserError) Sprintf() string {
-	return fmt.Sprintf("%v%v %v: %v",
-		color.FgRed.Render("[error]"),
-		color.FgMagenta.Render(fmt.Sprintf("[%v]", e.errtype)),
-		color.FgGray.Render(fmt.Sprintf("%v:%v:%v", e.fname, e.line, e.column)),
-		e.msg)
+	return fmt.Sprintf("[error][%v] %v:%v:%v: %v", e.errtype, e.fname, e.line, e.column, e.msg)
 }
 
 func (e *ErrCompilationFailed) Error() string {
@@ -65,7 +56,7 @@ func (e *ErrCompilationFailed) Error() string {
 }
 
 // SyntaxError handles syntax errors.
-func (el *errorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, line, column int, msg string, e antlr.RecognitionException) {
+func (el *errorListener) SyntaxError(line, column int, msg string) {
 	el.errors = append(el.errors, &ParserError{
 		fname:   el.fname,
 		errtype: "syntax",
@@ -137,6 +128,27 @@ func (el *errorListener) MissingExecModeError(stmt *token) {
 		line:    stmt.Line,
 		column:  stmt.Column,
 		msg:     fmt.Sprintf("exec mode is missing [one/many/exec] for query `%v`", firstline),
+	})
+}
+
+func (el *errorListener) DeprecatedArrowError(t *token) {
+	el.errors = append(el.errors, &ParserError{
+		fname:   el.fname,
+		errtype: "annotation",
+		line:    t.Line,
+		column:  t.Column,
+		msg:     "the '->' arrow is no longer required in @param syntax (use '@param name (...)' instead of '@param name -> (...)')",
+	})
+}
+
+func (el *errorListener) InconsistentNotNullError(paramName string, firstToken *token, markedCount, totalCount int) {
+	el.errors = append(el.errors, &ParserError{
+		fname:   el.fname,
+		errtype: "annotation",
+		line:    firstToken.Line,
+		column:  firstToken.Column,
+		msg: fmt.Sprintf("parameter `%v` has inconsistent not-null markers: %d of %d uses have '!' (all uses must be consistent)",
+			paramName, markedCount, totalCount),
 	})
 }
 

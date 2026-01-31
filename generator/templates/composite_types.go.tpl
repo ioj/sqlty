@@ -13,11 +13,3 @@ package {{.PackageName}}
     {{- end }}
   {{ end }}
 {{ end }}
-
-{{- range .Types }}
-  {{ if .IsCompositeType }}
-    {{ block "struct_functions" . -}}
-      // Template block for struct functions is missing
-    {{- end }}
-  {{ end }}
-{{ end }}
