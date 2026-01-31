@@ -5,6 +5,13 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/ioj/sqlty.svg)](https://pkg.go.dev/github.com/ioj/sqlty)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ioj/sqlty)](https://goreportcard.com/report/github.com/ioj/sqlty)
 
+<p align="center">
+    <picture>
+        <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/ioj/sqlty/refs/heads/master/.github/logo.png">
+        <img src="https://raw.githubusercontent.com/ioj/sqlty/refs/heads/master/.github/logo.png" alt="SQLty" width="500">
+    </picture>
+</p>
+
 ---
 
 ## The Pitch
