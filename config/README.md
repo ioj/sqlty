@@ -113,4 +113,4 @@ packageName:  queries  (lowercase basename)
 
 ## Dependencies
 
-- [spf13/viper](https://github.com/spf13/viper) - Configuration management
+- [yaml.v3](https://gopkg.in/yaml.v3) - YAML parsing
