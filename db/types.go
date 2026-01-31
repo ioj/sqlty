@@ -301,6 +301,11 @@ func (pt *pgTypes) Type(oid uint32, notnull bool) (*stmt.Type, error) {
 		return nil, fmt.Errorf("no type mapping for OID = %v", oid)
 	}
 
+	// Domain types resolve to their base type, inheriting NOT NULL constraint
+	if pgtype.Type == 'd' && pgtype.BaseType != 0 {
+		return pt.Type(pgtype.BaseType, notnull || pgtype.NotNull)
+	}
+
 	t := PGTypeDef{Fullname: pgtype.Fullname(), NotNull: notnull || pgtype.NotNull}
 
 	stmttype, ok := pt.translations[t]

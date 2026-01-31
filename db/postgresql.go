@@ -58,10 +58,15 @@ func (r *Resolver) getNullableAttrs(ctx context.Context, attrs []*pgAttr) error 
 		params = append(params, fmt.Sprintf("(%d,%d)", a.attrelid, a.attnum))
 	}
 
+	// Check for NOT NULL constraint from:
+	// 1. Column's attnotnull flag
+	// 2. Domain type's typnotnull flag (for domain-typed columns)
 	stmt := fmt.Sprintf(`
-		SELECT attrelid, attnum
-		FROM pg_attribute WHERE attnotnull = true
-			AND (attrelid, attnum) IN (%v)
+		SELECT a.attrelid, a.attnum
+		FROM pg_attribute a
+		LEFT JOIN pg_type t ON a.atttypid = t.oid
+		WHERE (a.attnotnull = true OR (t.typtype = 'd' AND t.typnotnull = true))
+			AND (a.attrelid, a.attnum) IN (%v)
 		`, strings.Join(params, ","))
 
 	rows, err := r.conn.Query(ctx, stmt)
