@@ -213,6 +213,18 @@ func main() {
 		os.Exit(0)
 	}
 
+	// Check if config file exists
+	if _, err := os.Stat(*configFile); os.IsNotExist(err) {
+		if *configFile == "sqlty.yaml" {
+			// Default config file doesn't exist - show usage
+			fmt.Fprintf(os.Stderr, "No configuration file found.\n\n")
+			flag.Usage()
+			os.Exit(0)
+		}
+		// User specified a config file that doesn't exist
+		log.Fatalf("Configuration file not found: %s", *configFile)
+	}
+
 	cfg, err := config.LoadFrom(*configFile)
 	if err != nil {
 		log.Fatalf("Configuration error: %v", err)
