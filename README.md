@@ -135,8 +135,12 @@ INSERT INTO users (email, name) VALUES (:email, :name);
 ```
 
 ```sql
-/* @name GetUsersByIDs @many */
-SELECT * FROM users WHERE id IN (:ids...);
+/*
+   @name GetUsersByIDs
+   @param ids (...)
+   @many
+*/
+SELECT * FROM users WHERE id IN (:ids);
 ```
 
 **Generate:**
