@@ -78,7 +78,7 @@ SQL File → Compiler (parse annotations) → DB Resolver (resolve types) → St
 
 ```sql
 /* @name queryName
-   @param paramName -> type
+   @param paramName (...)
    @notNull paramName
    @template templateName
    @exec @one/@many/@exec

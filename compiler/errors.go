@@ -131,13 +131,13 @@ func (el *errorListener) MissingExecModeError(stmt *token) {
 	})
 }
 
-func (el *errorListener) MissingArrowError(t *token) {
+func (el *errorListener) DeprecatedArrowError(t *token) {
 	el.errors = append(el.errors, &ParserError{
 		fname:   el.fname,
 		errtype: "annotation",
 		line:    t.Line,
 		column:  t.Column,
-		msg:     "missing `->` before parameter transform (e.g., @param name -> ((field1, field2)...))",
+		msg:     "the '->' arrow is no longer required in @param syntax (use '@param name (...)' instead of '@param name -> (...)')",
 	})
 }
 

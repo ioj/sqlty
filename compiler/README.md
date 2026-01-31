@@ -137,14 +137,14 @@ SELECT * FROM users WHERE id = :id;
 **Spread**: Expands to multiple values for `IN` clauses
 
 ```sql
-/* @param ids -> (...) */
+/* @param ids (...) */
 SELECT * FROM users WHERE id IN :ids;
 ```
 
 **Struct Spread**: Expands structs for bulk inserts
 
 ```sql
-/* @param users -> ((name, email)...) */
+/* @param users ((name, email)...) */
 INSERT INTO users (name, email) VALUES :users;
 ```
 
