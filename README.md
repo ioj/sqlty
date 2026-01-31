@@ -56,8 +56,6 @@ That's it. That's the tweet.
 
 ## Why Not Just Use [ORM]?
 
-Because I've mass-assigned myself into mass-unemployment enough times.
-
 Because `user.Preload("Posts.Comments.Author.Profile.Settings").Find(&users)` is
 not a query plan, it's a cry for help.
 
@@ -113,7 +111,7 @@ paths:
 package: db
 ```
 
-**Write SQL** in `queries/users.sql`:
+**Write SQL** in `queries/`:
 
 ```sql
 /* @name ListActiveUsers @many */
@@ -121,10 +119,14 @@ SELECT id, email, name
 FROM users
 WHERE active = true
 ORDER BY created_at DESC;
+```
 
+```sql
 /* @name CreateUser @exec */
 INSERT INTO users (email, name) VALUES (:email, :name);
+```
 
+```sql
 /* @name GetUsersByIDs @many */
 SELECT * FROM users WHERE id IN (:ids...);
 ```
@@ -170,16 +172,17 @@ func main() {
 
 ## The Annotation Cheat Sheet
 
-| Annotation           | What It Does                                                                          |
-| -------------------- | ------------------------------------------------------------------------------------- |
-| `@name FunctionName` | Names your function (shocking, I know)                                                |
-| `@one`               | Returns one row or `nil`                                                              |
-| `@many`              | Returns `[]Rows`                                                                      |
-| `@exec`              | Returns nothing. For INSERTs you don't care about                                     |
-| `@template cursor`   | Streaming for when you SELECT'd too much                                              |
-| `@param p -> type`   | Override type inference (for when SQLty is wrong, which is never, but hypothetically) |
-| `@notNull column`    | "Trust me, this nullable column won't be null here"                                   |
-| `@return CustomName` | Name your return struct something prettier                                            |
+| Annotation           | What It Does                                          |
+| -------------------- | ----------------------------------------------------- |
+| `@name FunctionName` | Names your function (shocking, I know)                |
+| `@one`               | Returns one row or `nil`                              |
+| `@many`              | Returns `[]Rows`                                      |
+| `@exec`              | Returns nothing. For INSERTs you don't care about     |
+| `@template cursor`   | Streaming for when you SELECT'd too much              |
+| `@param p (...)`     | `WHERE id IN (:ids...)` without counting placeholders |
+| `@param p ((a,b)...)`| Bulk inserts that don't make you hate your life       |
+| `@notNull column`    | "Trust me, this nullable column won't be null here"   |
+| `@return CustomName` | Name your return struct something prettier            |
 
 ---
 
@@ -200,7 +203,7 @@ Commit these. Or don't. I'm not your dad.
 
 ## Requirements
 
-- Go 1.21+ (we use generics, sue us)
+- Go 1.21+
 - PostgreSQL (MySQL support left as an exercise for the reader) (PRs welcome)
   (please)
 - pgx/v5
