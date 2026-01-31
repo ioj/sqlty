@@ -10,8 +10,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/ioj/sqlty/helpers"
 	"github.com/ioj/sqlty/stmt"
-	"github.com/serenize/snaker"
 )
 
 // Matches all characters that can't be used in golang's identifiers
@@ -67,7 +67,7 @@ var tmplfn = template.FuncMap{
 
 	"valueToIdent": func(val string) string {
 		normalized := identFix.ReplaceAllString(val, "_")
-		normalized = snaker.SnakeToCamel(normalized)
+		normalized = helpers.SnakeToPascalCase(normalized)
 		return normalized
 	},
 

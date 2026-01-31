@@ -6,9 +6,76 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
-
-	"github.com/serenize/snaker"
 )
+
+// commonInitialisms contains common programming initialisms that should be
+// fully uppercased when converting from snake_case to PascalCase.
+// Based on https://github.com/golang/go/wiki/CodeReviewComments#initialisms
+var commonInitialisms = map[string]bool{
+	"ACL":   true,
+	"API":   true,
+	"ASCII": true,
+	"CPU":   true,
+	"CSS":   true,
+	"DNS":   true,
+	"EOF":   true,
+	"GUID":  true,
+	"HTML":  true,
+	"HTTP":  true,
+	"HTTPS": true,
+	"ID":    true,
+	"IP":    true,
+	"JSON":  true,
+	"LHS":   true,
+	"QPS":   true,
+	"RAM":   true,
+	"RHS":   true,
+	"RPC":   true,
+	"SLA":   true,
+	"SMTP":  true,
+	"SQL":   true,
+	"SSH":   true,
+	"TCP":   true,
+	"TLS":   true,
+	"TTL":   true,
+	"UDP":   true,
+	"UI":    true,
+	"UID":   true,
+	"UUID":  true,
+	"URI":   true,
+	"URL":   true,
+	"UTF8":  true,
+	"VM":    true,
+	"XML":   true,
+	"XMPP":  true,
+	"XSRF":  true,
+	"XSS":   true,
+}
+
+// SnakeToPascalCase converts a snake_case string to PascalCase.
+// It handles common initialisms (e.g., "user_id" -> "UserID", "http_url" -> "HTTPURL").
+func SnakeToPascalCase(s string) string {
+	var result strings.Builder
+	words := strings.Split(s, "_")
+
+	for _, word := range words {
+		if word == "" {
+			continue
+		}
+
+		upper := strings.ToUpper(word)
+		if commonInitialisms[upper] {
+			result.WriteString(upper)
+			continue
+		}
+
+		runes := []rune(word)
+		runes[0] = unicode.ToUpper(runes[0])
+		result.WriteString(string(runes))
+	}
+
+	return result.String()
+}
 
 // Matches all characters that can't be used in golang's identifiers
 // https://golang.org/ref/spec#Identifiers
@@ -29,7 +96,7 @@ func NewStructFieldNormalizer() *StructFieldNormalizer {
 // with the first letter being lower-cased
 func (snn *StructFieldNormalizer) Add(orig string, private bool) (string, error) {
 	normalized := identFix.ReplaceAllString(orig, "_")
-	normalized = snaker.SnakeToCamel(normalized)
+	normalized = SnakeToPascalCase(normalized)
 	if len(normalized) == 0 {
 		return "", fmt.Errorf("invalid identifier '%v' (converts to an empty string)", orig)
 	}

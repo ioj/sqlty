@@ -9,7 +9,6 @@ import (
 
 	"github.com/ioj/sqlty/helpers"
 	"github.com/ioj/sqlty/stmt"
-	"github.com/serenize/snaker"
 )
 
 // token is a string with a location.
@@ -358,7 +357,7 @@ func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns *stmt.
 		name = regexp.MustCompile(`[^a-zA-Z0-9_.]`).ReplaceAllString(name, "_")
 	}
 
-	stmtq.Name = snaker.SnakeToCamel(name)
+	stmtq.Name = helpers.SnakeToPascalCase(name)
 
 	// Set the exec mode
 	switch q.execMode.Value {
@@ -381,7 +380,7 @@ func (q *Query) StmtQuery(packageName string, ptypes []stmt.Type, returns *stmt.
 	private := true
 
 	if q.paramStructName != nil {
-		stmtq.Params.Name = snaker.SnakeToCamel(q.paramStructName.Value)
+		stmtq.Params.Name = helpers.SnakeToPascalCase(q.paramStructName.Value)
 
 		// If there's a param struct name, all parameters are going to be placed in a struct,
 		// so their names should be public. If the param struct name is empty, all parameters
