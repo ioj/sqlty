@@ -111,7 +111,7 @@ func (snn *StructFieldNormalizer) Add(orig string, private bool) (string, error)
 	}
 
 	if private {
-		normalized = strings.ToLower(normalized[:1]) + normalized[1:]
+		normalized = toLowerCamelCase(normalized)
 	}
 
 	snn.keys[normalized] = append(snn.keys[normalized], orig)
@@ -121,4 +121,53 @@ func (snn *StructFieldNormalizer) Add(orig string, private bool) (string, error)
 	}
 
 	return normalized, nil
+}
+
+// toLowerCamelCase converts a PascalCase string to lowerCamelCase.
+// It properly handles leading initialisms by lowercasing the entire initialism,
+// not just the first letter. For example:
+//   - "DNSScoring" -> "dnsScoring" (not "dNSScoring")
+//   - "HTTPServer" -> "httpServer" (not "hTTPServer")
+//   - "UserID" -> "userID"
+//   - "ID" -> "id"
+func toLowerCamelCase(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+
+	runes := []rune(s)
+
+	// Count consecutive uppercase runes from the start
+	upperCount := 0
+	for _, r := range runes {
+		if unicode.IsUpper(r) {
+			upperCount++
+		} else {
+			break
+		}
+	}
+
+	if upperCount == 0 {
+		// No uppercase at start, return as-is
+		return s
+	}
+
+	if upperCount == 1 || upperCount == len(runes) {
+		// Single uppercase letter, or entire string is uppercase:
+		// lowercase the appropriate portion
+		if upperCount == 1 {
+			runes[0] = unicode.ToLower(runes[0])
+		} else {
+			// Entire string is uppercase (e.g., "ID", "API")
+			return strings.ToLower(s)
+		}
+	} else {
+		// Multiple uppercase followed by more chars (e.g., "DNSScoring")
+		// The last uppercase letter starts the next word, so lowercase all but that one
+		for i := 0; i < upperCount-1; i++ {
+			runes[i] = unicode.ToLower(runes[i])
+		}
+	}
+
+	return string(runes)
 }
