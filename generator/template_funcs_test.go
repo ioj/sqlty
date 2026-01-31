@@ -129,10 +129,10 @@ func TestValueToIdent(t *testing.T) {
 	}{
 		{"simple", "active", "Active"},
 		{"snake_case", "active_user", "ActiveUser"},
-		{"with hyphen", "in-progress", "InProgress"},      // hyphen -> underscore -> camel
-		{"with spaces", "hello world", "HelloWorld"},      // space -> underscore -> camel
+		{"with hyphen", "in-progress", "InProgress"}, // hyphen -> underscore -> camel
+		{"with spaces", "hello world", "HelloWorld"}, // space -> underscore -> camel
 		{"numbers", "status123", "Status123"},
-		{"special chars", "status@#$", "Status"},          // special chars stripped then camelized
+		{"special chars", "status@#$", "Status"}, // special chars stripped then camelized
 		{"trailing underscore", "active_", "Active"},
 	}
 
