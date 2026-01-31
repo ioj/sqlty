@@ -310,3 +310,93 @@
             notNull: true
     needsSprintf: true
     notNullArray: [true, true, true, true, true]
+
+# Inline not-null marker tests
+- name: InlineNotNullScalarParam
+  input: |
+    /* @name GetUserById @one */
+    SELECT * FROM users WHERE id = :userId!;
+  expected:
+    name: GetUserById
+    statement: SELECT * FROM users WHERE id = $1
+    template: array
+    scalars:
+      - type: scalar
+        idx: 0
+        notNull: true
+    notNullArray: [true]
+
+- name: InlineNotNullMultipleParams
+  input: |
+    /* @name UpdateUser @exec */
+    UPDATE users SET name = :name!, email = :email WHERE id = :id!;
+  expected:
+    name: UpdateUser
+    statement: UPDATE users SET name = $1, email = $2 WHERE id = $3
+    template: array
+    scalars:
+      - type: scalar
+        idx: 0
+        notNull: true
+      - type: scalar
+        idx: 1
+        notNull: false
+      - type: scalar
+        idx: 2
+        notNull: true
+    notNullArray: [true, false, true]
+
+- name: InlineNotNullReusedParam
+  input: |
+    /* @name FindDuplicates @many */
+    SELECT * FROM items WHERE a = :id! OR b = :id!;
+  expected:
+    name: FindDuplicates
+    statement: SELECT * FROM items WHERE a = $1 OR b = $1
+    template: array
+    scalars:
+      - type: scalar
+        idx: 0
+        notNull: true
+    notNullArray: [true]
+
+- name: InlineNotNullWithAnnotation
+  input: |
+    /*
+      @name GetUser
+      @one
+      @notNullParams id
+    */
+    SELECT * FROM users WHERE id = :id! AND status = :status!;
+  expected:
+    name: GetUser
+    statement: SELECT * FROM users WHERE id = $1 AND status = $2
+    template: array
+    scalars:
+      - type: scalar
+        idx: 0
+        notNull: true
+      - type: scalar
+        idx: 1
+        notNull: true
+    notNullArray: [true, true]
+
+- name: ErrorInconsistentNotNull
+  input: |
+    /* @name Update @exec */
+    UPDATE users SET name = :name! WHERE id = :name;
+  expectedError: "inconsistent not-null markers"
+
+- name: InlineNotNullWithSQLOperators
+  input: |
+    /* @name FindNonNull @many */
+    SELECT * FROM users WHERE id != 0 AND status !~ 'deleted' AND name = :name!;
+  expected:
+    name: FindNonNull
+    statement: SELECT * FROM users WHERE id != 0 AND status !~ 'deleted' AND name = $1
+    template: array
+    scalars:
+      - type: scalar
+        idx: 0
+        notNull: true
+    notNullArray: [true]

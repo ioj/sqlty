@@ -56,6 +56,7 @@ Used when parsing the SQL statement itself.
 | `TokenString`      | `'...'`                  | String literal (handles `''` escapes) |
 | `TokenSemicolon`   | `;`                      | Statement terminator                  |
 | `TokenPercent`     | `%`                      | Percent sign (for sprintf escaping)   |
+| `TokenExclamation` | `!`                      | Inline not-null marker (`:param!`)    |
 
 ### COMMENT Mode (annotation block)
 
@@ -110,7 +111,9 @@ The parser is a recursive descent parser that builds a `Query` struct.
 
 4. **Validation**
    - `checkUnusedParameters()` - Error if `@param` declared but not used
+   - `validateInlineNotNulls()` - Checks `:param!` consistency across uses
    - `populateNotNullParams()` - Links `@notNullParams` to params
+   - `mergeInlineNotNulls()` - Applies inline `!` markers to params
    - `verifyExecMode()` - Error if `@one/@many/@exec` missing
 
 ### Annotation Tags
@@ -163,6 +166,31 @@ Marks parameters or struct fields as non-nullable.
 ```sql
 /* @notNullParams (id, user.name) */
 ```
+
+#### Inline Not-Null Syntax (`:param!`)
+
+As an alternative to `@notNullParams`, you can mark parameters as non-null
+directly in the SQL using `!` after the parameter name:
+
+```sql
+/* @name GetUser @one */
+SELECT * FROM users WHERE id = :id! AND status = :status;
+```
+
+In this example, `id` is marked as non-null while `status` remains nullable.
+
+**Consistency requirement**: If a parameter is used multiple times and any use
+has `!`, all uses must have `!`:
+
+```sql
+-- Valid: all uses have !
+WHERE id = :id! OR parent_id = :id!
+
+-- Invalid: inconsistent usage (will error)
+WHERE id = :id! OR parent_id = :id
+```
+
+Both `@notNullParams` and inline `!` can be used together without conflict.
 
 #### `@returnValueName`
 
@@ -244,6 +272,7 @@ Error messages include file, line, and column for precise reporting:
 
 ```
 [error][annotation] query.sql:5:2: parameter `id` is declared, but not used in the query
+[error][annotation] query.sql:3:20: parameter `name` has inconsistent not-null markers: 1 of 2 uses have '!' (all uses must be consistent)
 ```
 
 ## Usage Example
@@ -262,7 +291,9 @@ SELECT * FROM users WHERE id = :id;
 `)
 ```
 
-## Example SQL File
+## Example SQL Files
+
+### Using `@notNullParams`
 
 ```sql
 /*
@@ -279,9 +310,22 @@ ORDER BY created_at DESC
 LIMIT :limit;
 ```
 
-This produces:
+### Using Inline `!` Syntax
+
+```sql
+/* @name GetUsersByStatus @many */
+-- GetUsersByStatus retrieves users filtered by status.
+-- Returns up to `limit` results.
+SELECT id, name, email, status
+FROM users
+WHERE status = :status!
+ORDER BY created_at DESC
+LIMIT :limit!;
+```
+
+Both examples produce:
 
 - Function name: `GetUsersByStatus`
-- Parameters: `status` (not-null), `limit`
+- Parameters: `status` (not-null), `limit` (not-null)
 - Return type: `[]User`
 - Docstring from line comments

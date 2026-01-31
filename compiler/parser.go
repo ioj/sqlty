@@ -21,15 +21,20 @@ type Parser struct {
 	currentParam           *Param
 	currentStructTransform []*StructKey
 	currentNotNull         []*token
+
+	// Track inline not-null markers from :param! syntax
+	// Key is lowercase param name, value is list of tokens where ! was used
+	inlineNotNulls map[string][]*token
 }
 
 // NewParser creates a new parser for the given input.
 func NewParser(filename string, input string) *Parser {
 	return &Parser{
-		lexer:    NewLexer(input),
-		filename: filename,
-		errors:   newErrorListener(filename),
-		input:    input,
+		lexer:          NewLexer(input),
+		filename:       filename,
+		errors:         newErrorListener(filename),
+		input:          input,
+		inlineNotNulls: make(map[string][]*token),
 	}
 }
 
@@ -87,7 +92,9 @@ func (p *Parser) Parse() (*Query, error) {
 
 	// Run validation
 	p.checkUnusedParameters()
-	p.populateNotNullParams()
+	p.validateInlineNotNulls() // Check :param! consistency
+	p.populateNotNullParams()  // Process @notNullParams
+	p.mergeInlineNotNulls()    // Apply :param! markers
 	p.verifyExecMode()
 
 	if p.query == nil {
@@ -469,12 +476,24 @@ func (p *Parser) parseStatementBody() error {
 			})
 		}
 
-		// Track parameters
+		// Track parameters (handles :param and :param!)
 		if p.current.Type == TokenParamMark {
 			p.next()
 
 			if p.current.Type == TokenIdentifier {
-				p.trackParameter(p.current)
+				paramIdent := p.current
+				paramEndPos := paramIdent.Stop // End position of the parameter reference
+				p.next()
+
+				// Check for not-null marker: !
+				hasNotNull := p.current.Type == TokenExclamation
+				if hasNotNull {
+					paramEndPos = p.current.Stop
+					p.next()
+				}
+
+				// Track the parameter with its full range (including ! if present)
+				p.trackParameter(paramIdent, hasNotNull, paramEndPos)
 			}
 			continue
 		}
@@ -531,18 +550,21 @@ func (p *Parser) scanForPercents(t Token) {
 	}
 }
 
-// trackParameter tracks a parameter usage in the SQL statement.
-func (p *Parser) trackParameter(ident Token) {
-	name := ident.Value
+// trackParameter tracks a parameter usage in the SQL statement,
+// including any inline not-null marker (!).
+// endPos is the end position of the full reference (including ! if present).
+func (p *Parser) trackParameter(paramIdent Token, hasNotNull bool, endPos int) {
+	name := paramIdent.Value
 	lname := strings.ToLower(name)
 
 	// Create token for the param identifier (not including the :)
+	// Use endPos to include ! suffix in the replacement range
 	t := &token{
 		Value:  name,
-		Start:  ident.Start,
-		Stop:   ident.Stop,
-		Line:   ident.Line,
-		Column: ident.Column,
+		Start:  paramIdent.Start,
+		Stop:   endPos,
+		Line:   paramIdent.Line,
+		Column: paramIdent.Column,
 	}
 
 	param, ok := p.query.params[lname]
@@ -557,6 +579,11 @@ func (p *Parser) trackParameter(ident Token) {
 			uses:       []*token{t},
 		}
 		p.query.paramIdx[Scalar]++
+	}
+
+	// Track inline not-null marker if present
+	if hasNotNull {
+		p.inlineNotNulls[lname] = append(p.inlineNotNulls[lname], t)
 	}
 }
 
@@ -590,6 +617,37 @@ func (p *Parser) populateNotNullParams() {
 				structkey.NotNull = true
 			}
 		}
+	}
+}
+
+// validateInlineNotNulls validates that inline not-null markers are consistent.
+// For each parameter that has at least one ! marker, ALL uses must have !.
+func (p *Parser) validateInlineNotNulls() {
+	for paramName, notNullTokens := range p.inlineNotNulls {
+		param, ok := p.query.params[paramName]
+		if !ok {
+			continue
+		}
+
+		totalUses := len(param.uses)
+		notNullCount := len(notNullTokens)
+
+		// If some uses have ! but not all, report an error
+		if notNullCount > 0 && notNullCount != totalUses {
+			p.errors.InconsistentNotNullError(paramName, notNullTokens[0], notNullCount, totalUses)
+		}
+	}
+}
+
+// mergeInlineNotNulls applies inline not-null markers to params.
+// This runs after populateNotNullParams() to combine both sources.
+func (p *Parser) mergeInlineNotNulls() {
+	for paramName := range p.inlineNotNulls {
+		param, ok := p.query.params[paramName]
+		if !ok {
+			continue
+		}
+		param.NotNull = true
 	}
 }
 

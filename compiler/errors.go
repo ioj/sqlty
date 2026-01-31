@@ -141,6 +141,17 @@ func (el *errorListener) DeprecatedArrowError(t *token) {
 	})
 }
 
+func (el *errorListener) InconsistentNotNullError(paramName string, firstToken *token, markedCount, totalCount int) {
+	el.errors = append(el.errors, &ParserError{
+		fname:   el.fname,
+		errtype: "annotation",
+		line:    firstToken.Line,
+		column:  firstToken.Column,
+		msg: fmt.Sprintf("parameter `%v` has inconsistent not-null markers: %d of %d uses have '!' (all uses must be consistent)",
+			paramName, markedCount, totalCount),
+	})
+}
+
 func (el *errorListener) Error() error {
 	if len(el.errors) == 0 {
 		return nil

@@ -20,6 +20,7 @@ const (
 	TokenString      // '...'
 	TokenSemicolon   // ;
 	TokenPercent     // %
+	TokenExclamation // !
 
 	// COMMENT mode tokens
 	TokenCloseComment      // */
@@ -233,6 +234,12 @@ func (l *Lexer) scanDefaultMode() Token {
 		return l.emitToken(TokenPercent)
 	}
 
+	// Check for exclamation (inline not-null marker for parameters)
+	if r == '!' {
+		l.advance()
+		return l.emitToken(TokenExclamation)
+	}
+
 	// Scan identifier or word
 	if isIdentStart(r) {
 		return l.scanIdentifier()
@@ -364,7 +371,7 @@ func (l *Lexer) scanWord() Token {
 			break
 		}
 		// Stop at special characters
-		if r == ';' || r == ':' || r == '\'' || r == '%' || r == '/' || r == '-' {
+		if r == ';' || r == ':' || r == '\'' || r == '%' || r == '/' || r == '-' || r == '!' {
 			// Check for comment starts
 			if r == '/' && l.peekNext() == '*' {
 				break
@@ -379,6 +386,16 @@ func (l *Lexer) scanWord() Token {
 				}
 				// It's ::, advance past first colon (the loop will advance past the second)
 				l.advance()
+			}
+			// Check for != or !~ operators - don't break on these
+			if r == '!' {
+				next := l.peekNext()
+				if next == '=' || next == '~' {
+					// Part of an operator, continue scanning
+					l.advance()
+					continue
+				}
+				break
 			}
 		}
 		l.advance()
