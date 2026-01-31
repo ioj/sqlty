@@ -90,6 +90,8 @@ ORM of choice this week.
 - **Spread parameters** — `WHERE id IN (:ids...)` expands slices automatically
 - **Bulk inserts** — Shove entire structs into INSERT statements
 - **Incremental builds** — Only regenerates what changed (we respect your CPU)
+- **Minimal dependencies** — Just pgx/v5 and the standard library. No dependency
+  trees that make your security team cry
 
 ---
 
@@ -172,17 +174,19 @@ func main() {
 
 ## The Annotation Cheat Sheet
 
-| Annotation           | What It Does                                          |
-| -------------------- | ----------------------------------------------------- |
-| `@name FunctionName` | Names your function (shocking, I know)                |
-| `@one`               | Returns one row or `nil`                              |
-| `@many`              | Returns `[]Rows`                                      |
-| `@exec`              | Returns nothing. For INSERTs you don't care about     |
-| `@template cursor`   | Streaming for when you SELECT'd too much              |
-| `@param p (...)`     | `WHERE id IN (:ids...)` without counting placeholders |
-| `@param p ((a,b)...)`| Bulk inserts that don't make you hate your life       |
-| `@notNull column`    | "Trust me, this nullable column won't be null here"   |
-| `@return CustomName` | Name your return struct something prettier            |
+| Annotation                | What It Does                                          |
+| ------------------------- | ----------------------------------------------------- |
+| `@name FunctionName`      | Names your function (shocking, I know)                |
+| `@one`                    | Returns one row or `nil`                              |
+| `@many`                   | Returns `[]Rows`                                      |
+| `@exec`                   | Returns nothing. For INSERTs you don't care about     |
+| `@template cursor`        | Streaming for when you SELECT'd too much              |
+| `@param p (...)`          | `WHERE id IN (:ids...)` without counting placeholders |
+| `@param p ((a,b)...)`     | Bulk inserts that don't make you hate your life       |
+| `@notNullParams a, b`     | "Trust me, these nullable columns won't be null here" |
+| `@returnValueName Custom` | Name your return struct something prettier            |
+| `@paramStructName Custom` | Name your params struct (for the aesthetically picky) |
+| `:param!`                 | Inline not-null: "this one specifically, trust me"    |
 
 ---
 
