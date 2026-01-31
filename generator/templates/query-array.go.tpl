@@ -54,18 +54,16 @@ import (
 {{- $returnsStruct := returnsStruct . }}
 {{- $returnType := printf "*%v" .Returns.Name }}
 {{- $returnNilValue := "nil" }}
-{{- $returnZeroValue := printf "&%v{}" .Returns.Name }}
 
 {{- if eq .ExecMode "exec" }}
   {{- $returnType = "pgconn.CommandTag" }}
-  {{- $returnZeroValue := "make(pgconn.CommandTag, 0)" }}
+  {{- $returnNilValue = "pgconn.CommandTag{}" }}
 {{- else -}}
   {{- if not $returnsStruct -}}
     {{- $returnType = firstParamTypeName .Returns.Params -}}
     {{ if eq .ExecMode "one" -}}
       {{- $returnNilValue = firstParamNilReturnValue .Returns.Params -}}
     {{- end -}}
-    {{- $returnZeroValue = firstParamZeroReturnValue .Returns.Params -}}
   {{- end -}}
 {{- end -}}
 

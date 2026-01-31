@@ -255,3 +255,58 @@
         notNull: true
         keys: []
     notNullArray: [true, false, true]
+
+- name: ErrorMissingArrowInParamTransform
+  input: |
+    /*
+      @exec
+      @param batch_item_row ((batch_id, value)...)
+      @notNullParams batch_item_row.batch_id, batch_item_row.value
+    */
+    insert into batch.result (batch_id, value) values :batch_item_row;
+  expectedError: "missing `->` before parameter transform"
+
+- name: StructSpreadInRowConstructorWithIn
+  input: |
+    /*
+      @name DeleteCidrs
+      @many
+      @template cursor
+      @param context_row -> ((value, port, proto, flag_id, family)...)
+      @notNullParams context_row.value, context_row.port, context_row.proto, context_row.flag_id, context_row.family
+    */
+    delete from context.cidr
+    using context.source
+    where
+        source.source_id = cidr.source_id
+        and source.name = 'wisdom-afp'
+        and (value, port, proto, flag_id, coalesce(family, '')) in (:context_row)
+    returning cidr.cidr_id as context_id, cidr.value::text, cidr.family, cidr.port, cidr.proto;
+  expected:
+    name: DeleteCidrs
+    statement: |
+      delete from context.cidr
+      using context.source
+      where
+          source.source_id = cidr.source_id
+          and source.name = 'wisdom-afp'
+          and (value, port, proto, flag_id, coalesce(family, '')) in (%[1]v)
+      returning cidr.cidr_id as context_id, cidr.value::text, cidr.family, cidr.port, cidr.proto;
+    template: cursor
+    structSpreads:
+      - type: structspread
+        idx: 0
+        notNull: false
+        keys:
+          - name: value
+            notNull: true
+          - name: port
+            notNull: true
+          - name: proto
+            notNull: true
+          - name: flag_id
+            notNull: true
+          - name: family
+            notNull: true
+    needsSprintf: true
+    notNullArray: [true, true, true, true, true]

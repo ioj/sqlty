@@ -131,6 +131,16 @@ func (el *errorListener) MissingExecModeError(stmt *token) {
 	})
 }
 
+func (el *errorListener) MissingArrowError(t *token) {
+	el.errors = append(el.errors, &ParserError{
+		fname:   el.fname,
+		errtype: "annotation",
+		line:    t.Line,
+		column:  t.Column,
+		msg:     "missing `->` before parameter transform (e.g., @param name -> ((field1, field2)...))",
+	})
+}
+
 func (el *errorListener) Error() error {
 	if len(el.errors) == 0 {
 		return nil

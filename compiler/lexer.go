@@ -372,9 +372,13 @@ func (l *Lexer) scanWord() Token {
 			if r == '-' && l.peekNext() == '-' {
 				break
 			}
-			// Check for :: (cast)
-			if r == ':' && l.peekNext() != ':' {
-				break
+			// Check for :: (cast) - need to advance past both colons
+			if r == ':' {
+				if l.peekNext() != ':' {
+					break
+				}
+				// It's ::, advance past first colon (the loop will advance past the second)
+				l.advance()
 			}
 		}
 		l.advance()

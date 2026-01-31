@@ -210,17 +210,24 @@ func (p *Parser) parseParamTag() error {
 
 	p.next() // consume name
 
-	// Expect ->
-	if p.current.Type != TokenArrow {
-		// No transform specified, might be an old/different syntax
-		// Add as scalar param
+	// Check for -> (transform syntax)
+	if p.current.Type == TokenArrow {
+		p.next() // consume ->
+	} else if p.current.Type == TokenOpenParen {
+		// User likely forgot the -> before the transform
+		p.errors.MissingArrowError(p.makeToken(p.current))
+		// Skip to end of transform for error recovery
+		p.skipToEndOfTransform()
+		p.currentParam = nil
+		return nil
+	} else {
+		// No transform specified, add as scalar param
 		if p.currentParam != nil {
 			p.query.params[lname] = p.currentParam
 		}
 		p.currentParam = nil
 		return nil
 	}
-	p.next() // consume ->
 
 	// Parse transform
 	if err := p.parseTransform(); err != nil {
@@ -235,6 +242,24 @@ func (p *Parser) parseParamTag() error {
 	}
 
 	return nil
+}
+
+// skipToEndOfTransform skips tokens until we're past the transform expression.
+// Used for error recovery when a transform is found without the -> arrow.
+func (p *Parser) skipToEndOfTransform() {
+	depth := 0
+	for p.current.Type != TokenCloseComment && p.current.Type != TokenEOF {
+		if p.current.Type == TokenOpenParen {
+			depth++
+		} else if p.current.Type == TokenCloseParen {
+			depth--
+			if depth <= 0 {
+				p.next() // consume final )
+				return
+			}
+		}
+		p.next()
+	}
 }
 
 // parseTransform parses (...) or ((fields)...).
