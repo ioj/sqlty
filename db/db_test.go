@@ -466,6 +466,83 @@ func TestNewlyAddedTypes(t *testing.T) {
 	}
 }
 
+// TestArrayTypes tests that PostgreSQL array types resolve to Go slices.
+func TestArrayTypes(t *testing.T) {
+	r := setupResolver(t)
+	ctx := context.Background()
+
+	tests := []struct {
+		name     string
+		query    string
+		notnulls []bool
+		wantType string
+	}{
+		{"uuid array", "SELECT $1::uuid[]", []bool{true}, "[]pgtype.UUID"},
+		{"int4 array", "SELECT $1::int4[]", []bool{true}, "[]int"},
+		{"text array", "SELECT $1::text[]", []bool{true}, "[]string"},
+		{"bool array", "SELECT $1::bool[]", []bool{true}, "[]bool"},
+		{"float8 array", "SELECT $1::float8[]", []bool{true}, "[]float64"},
+		{"int8 array", "SELECT $1::int8[]", []bool{true}, "[]int"},
+		{"timestamptz array", "SELECT $1::timestamptz[]", []bool{true}, "[]time.Time"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			params, _, err := r.ResolveTypes(ctx, tt.query, tt.notnulls)
+			require.NoError(t, err)
+			require.Len(t, params, 1)
+			assert.Equal(t, tt.wantType, params[0].Name)
+		})
+	}
+}
+
+// TestArrayTypeAsReturnColumn tests array types in SELECT return columns.
+func TestArrayTypeAsReturnColumn(t *testing.T) {
+	conn := setupTestDB(t)
+	ctx := context.Background()
+
+	tableName := "test_arrays_" + randomSuffix()
+	_, err := conn.Exec(ctx, "CREATE TABLE "+tableName+" (id int4 NOT NULL, tags text[] NOT NULL, scores int4[])")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		conn.Exec(ctx, "DROP TABLE IF EXISTS "+tableName)
+	})
+
+	r := setupResolver(t)
+
+	_, returns, err := r.ResolveTypes(ctx, "SELECT id, tags, scores FROM "+tableName, nil)
+	require.NoError(t, err)
+	require.NotNil(t, returns)
+	require.Len(t, returns.Params, 3)
+
+	assert.Equal(t, "int", returns.Params[0].Type.Name)
+	assert.Equal(t, "[]string", returns.Params[1].Type.Name)
+	assert.Equal(t, "[]int", returns.Params[2].Type.Name)
+}
+
+// TestArrayTypeWithAny tests the common pattern of using array param with ANY().
+func TestArrayTypeWithAny(t *testing.T) {
+	conn := setupTestDB(t)
+	ctx := context.Background()
+
+	tableName := "test_any_arr_" + randomSuffix()
+	_, err := conn.Exec(ctx, "CREATE TABLE "+tableName+" (id uuid NOT NULL DEFAULT gen_random_uuid(), name text NOT NULL)")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		conn.Exec(ctx, "DROP TABLE IF EXISTS "+tableName)
+	})
+
+	r := setupResolver(t)
+
+	// This is the pattern from the original bug report: id = any($1::uuid[])
+	params, returns, err := r.ResolveTypes(ctx, "SELECT id, name FROM "+tableName+" WHERE id = any($1::uuid[])", []bool{true})
+	require.NoError(t, err)
+	require.Len(t, params, 1)
+	assert.Equal(t, "[]pgtype.UUID", params[0].Name)
+	require.NotNil(t, returns)
+	require.Len(t, returns.Params, 2)
+}
+
 // TestUnknownType tests error handling for types without mappings.
 func TestUnknownType(t *testing.T) {
 	ctx := context.Background()

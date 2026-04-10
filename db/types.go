@@ -337,5 +337,18 @@ func (pt *pgTypes) Type(oid uint32, notnull bool) (*stmt.Type, error) {
 		return nil, errComposite
 	}
 
+	// Array types: resolve element type and wrap in a Go slice
+	if pgtype.Elem != 0 {
+		elemType, err := pt.Type(pgtype.Elem, true)
+		if err != nil {
+			return nil, fmt.Errorf("unknown array element type for oid = %v, name = %v: %w", oid, t.Fullname, err)
+		}
+		return &stmt.Type{
+			Name:      "[]" + elemType.Name,
+			ZeroValue: "[]" + elemType.Name + "{}",
+			Nullable:  false,
+		}, nil
+	}
+
 	return nil, fmt.Errorf("unknown type oid = %v, name = %v, notnull = %v", oid, t.Fullname, t.NotNull)
 }
