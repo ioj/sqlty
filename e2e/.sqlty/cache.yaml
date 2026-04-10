@@ -1,0 +1,13 @@
+items:
+    generated/create_user.gen.go: 07ed759facdd355b6e5bcbef9edd5853
+    generated/db.sqlty.gen.go: 1aaee8912ef09d08e70291b74fa78281
+    generated/delete_user.gen.go: 0e4919e1d31ddf542216912528f351af
+    generated/enums.sqlty.gen.go: 388687060cee582c1864183b92fc92cd
+    generated/find_by_tags.gen.go: 9913d2c5df313188392fed1b5c078a45
+    generated/find_users_by_ids.gen.go: a09cb5d03bdebbfe64deec52406799d2
+    generated/get_arrays.gen.go: f65589a25f907763dc33edf79416e706
+    generated/get_user.gen.go: 8aa978a89c39b4e641567b6d041325f6
+    generated/get_user_email.gen.go: 53760cedfca76b220147aa9ff5fb0161
+    generated/get_user_status.gen.go: baae6ef0dfac44f7a15453a94691d2f1
+    generated/list_users.gen.go: 17519e3273670392d3126dce24793640
+    generated/update_user.gen.go: 6456f15a86efaf5accb104592a1e9cbc
