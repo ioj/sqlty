@@ -257,3 +257,43 @@ func TestFindByTags(t *testing.T) {
 	require.Len(t, rows, 1)
 	assert.Equal(t, []string{"go", "sql"}, rows[0].StrTags)
 }
+
+func TestFindUsersByNames(t *testing.T) {
+	setup(t)
+	db, _ := newDB(t)
+	seedUsers(t, db)
+
+	rows, err := db.FindUsersByNames(context.Background(), []*string{ptr("Alice"), ptr("Bob")})
+	require.NoError(t, err)
+	require.Len(t, rows, 2)
+
+	rows, err = db.FindUsersByNames(context.Background(), []*string{ptr("Alice")})
+	require.NoError(t, err)
+	require.Len(t, rows, 1)
+	assert.Equal(t, "Alice", rows[0].Name)
+}
+
+func TestBulkInsertArrays(t *testing.T) {
+	setup(t)
+	db, _ := newDB(t)
+	ctx := context.Background()
+
+	id1 := mustUUID("c0000000-0000-0000-0000-000000000001")
+	id2 := mustUUID("c0000000-0000-0000-0000-000000000002")
+
+	_, err := db.BulkInsertArrays(ctx, []*generated.Rows{
+		{ID: id1, IntTags: []int{1, 2}, StrTags: []string{"go"}, UuidRefs: []pgtype.UUID{id1}, Flags: []bool{true}},
+		{ID: id2, IntTags: []int{3}, StrTags: []string{"rust", "sql"}, UuidRefs: []pgtype.UUID{}, Flags: []bool{false, true}},
+	})
+	require.NoError(t, err)
+
+	row1, err := db.GetArrays(ctx, id1)
+	require.NoError(t, err)
+	assert.Equal(t, []int{1, 2}, row1.IntTags)
+	assert.Equal(t, []string{"go"}, row1.StrTags)
+
+	row2, err := db.GetArrays(ctx, id2)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"rust", "sql"}, row2.StrTags)
+	assert.Equal(t, []bool{false, true}, row2.Flags)
+}
